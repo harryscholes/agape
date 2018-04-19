@@ -1,2 +1,2 @@
-# agape
-Automatic Gene Ontology annotation prediction in S. pombe
+# AGAPE
+**A**utomatic **G**ene ontology **A**nnotation **P**rediction in S. pomb**E**
