@@ -9,8 +9,17 @@ env:
   global:
     - REPO=$(basename $TRAVIS_REPO_SLUG)
     - MINICONDA=$HOME/miniconda
+    - AGAPEDATA=$HOME/cache
+
+cache:
+  directories:
+    - $AGAPEDATA
 
 before_install:
+  # Download data
+  - bash required_data.sh
+
+  # Install environment
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $MINICONDA
   - export PATH="$MINICONDA/bin:$PATH"
