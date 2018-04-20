@@ -28,7 +28,7 @@ setup(
         'scipy>=1.0',
         'pandas>=0.22',
         'scikit-learn>=0.19',
-        'networkx>=2.1'
+        'networkx>=2.1',
         'biopython>=1.70',
         'goatools>=0.8'],
     tests_require=[
