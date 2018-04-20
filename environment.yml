@@ -4,6 +4,7 @@ name: agape
 channels:
   - defaults
 dependencies:
+  - python=3.6
   - scipy
   - numpy
   - pandas
