@@ -10,6 +10,8 @@ dependencies:
   - networkx
   - scikit-learn
   - pip:
+    - biopython
+    - goatools
     - mypy
     - pytest
     - pytest-cov
