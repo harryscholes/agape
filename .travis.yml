@@ -32,6 +32,7 @@ before_install:
   - cat environment.yml
   - conda env create -f environment.yml
   - source activate $REPO
+  - pip install codecov
 
 install:
   - pip install -e .
