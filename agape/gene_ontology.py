@@ -9,7 +9,7 @@ from goatools.associations import read_gaf
 
 __all__ = ["GO", "prettify"]
 
-data = os.environ["POMBAGEDATA"]
+data = os.environ["AGAPEDATA"]
 
 
 @contextmanager

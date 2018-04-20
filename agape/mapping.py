@@ -6,7 +6,7 @@ from typing import Dict
 
 __all__ = ["gene2symbol"]
 
-data = os.environ["POMBAGEDATA"]
+data = os.environ["AGAPEDATA"]
 
 
 def dictify(df, key: str, value: str) -> dict:

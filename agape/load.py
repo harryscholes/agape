@@ -5,7 +5,7 @@ import pandas as pd
 
 __all__ = ["Genes", "biogrid"]
 
-data = os.environ["POMBAGEDATA"]
+data = os.environ["AGAPEDATA"]
 
 
 class Genes(object):
