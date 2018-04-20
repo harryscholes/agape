@@ -12,6 +12,7 @@ env:
     - AGAPEDATA=$HOME/cache
 
 cache:
+  pip: true
   directories:
     - $AGAPEDATA
 
