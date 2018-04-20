@@ -1,0 +1,8 @@
+.DS_Store
+.ropeproject/config.py
+__pycache__/
+.coverage
+.cache/
+.eggs/
+.pytest_cache/
+agape.egg-info
