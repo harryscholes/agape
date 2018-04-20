@@ -19,7 +19,7 @@ before_install:
   - conda info -a
   - sed -i "/python/c\  - python=${TRAVIS_PYTHON_VERSION}" environment.yml
   - echo "  - nomkl" >> environment.yml
-  - cat conda_environment.yml
+  - cat environment.yml
   - conda env create -f environment.yml
   - source activate $REPO
 
