@@ -47,7 +47,6 @@ class GO(object):
 
         go_dag = GODag(os.path.join(data, "go.obo"))
         self.go_dag = go_dag
-        self.go_id_2_ontology = {k: go_dag[k].namespace for k in go_dag}
 
     def __iter__(self):
         """Iterate over annotations.
@@ -115,6 +114,11 @@ class GO(object):
 
         df = pd.DataFrame(go_id_2_ontology_count).T
         return df
+
+    def term2ontology(self):
+        """Maps GO terms to their ontology.
+        """
+        return {i: self.go_dag[i].namespace for i in self.go_dag}
 
 
 def remove_unwanted_genes(unwanted_genes, associations):
