@@ -17,6 +17,7 @@ cache:
 
 before_install:
   - bash required_data.sh  # Download data
+  - pip install codecov
 
 install:
   - pip install -e ".[test]"
@@ -25,5 +26,4 @@ script:
   - pytest
 
 after_success:
-  - pip install codecov
   - codecov
