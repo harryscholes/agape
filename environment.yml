@@ -1,0 +1,18 @@
+# conda env create -f environment.yml
+
+name: agape
+channels:
+  - defaults
+dependencies:
+  - python=3.6
+  - scipy
+  - numpy
+  - pandas
+  - networkx
+  - scikit-learn
+  - pip:
+    - biopython
+    - goatools
+    - mypy
+    - pytest
+    - pytest-cov

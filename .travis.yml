@@ -1,0 +1,44 @@
+sudo: false
+
+language: python
+
+python:
+  - 3.6
+
+env:
+  global:
+    - REPO=$(basename $TRAVIS_REPO_SLUG)
+    - MINICONDA=$HOME/miniconda
+    - AGAPEDATA=$HOME/cache
+
+cache:
+  pip: true
+  directories:
+    - $AGAPEDATA
+
+before_install:
+  # Download data
+  - bash required_data.sh
+
+  # Install environment
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $MINICONDA
+  - export PATH="$MINICONDA/bin:$PATH"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+  # - sed -i "/python/c\  - python=${TRAVIS_PYTHON_VERSION}" environment.yml
+  - echo "  - nomkl" >> environment.yml
+  - cat environment.yml
+  - conda env create -f environment.yml
+  - source activate $REPO
+  - pip install codecov
+
+install:
+  - pip install -e .
+
+script:
+  - pytest
+
+after_success:
+  - codecov
