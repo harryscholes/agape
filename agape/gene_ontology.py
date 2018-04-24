@@ -43,7 +43,8 @@ class GO(object):
         for k, v in self.filters.items():
             setattr(self, k, v)
 
-        self.filter_set = [self.filters[arg] for arg in args] if len(args) > 0 else False
+        self.filter_set = [self.filters[arg] for arg in args] \
+            if len(args) > 0 else False
 
         go_dag = GODag(os.path.join(data, "go.obo"))
         self.go_dag = go_dag
@@ -128,8 +129,12 @@ def remove_unwanted_genes(unwanted_genes, associations):
         unwanted_genes: list, list of unwanted genes
         associations: defaultdict, associations read by `read_gaf`
     """
-    for gene in unwanted_genes:
-        del associations[gene]
+    try:
+        for gene in unwanted_genes:
+            del associations[gene]
+    except KeyError as err:
+        err.args = f"Not a gene: {err.args[0]}"
+        raise
     return associations
 
 
