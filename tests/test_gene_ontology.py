@@ -26,10 +26,13 @@ class TestGO:
             assert hasattr(GoObj, ec)
 
     def test_set_allowed_evidence_codes(self, GoObj):
-        a = ["curated", "automatic"]
-        expected = [{"Evidence": {"IC", "TAS"}}, {"Evidence": {"IEA"}}]
-        GoObj.set_allowed_evidence_codes(a)
-        assert GoObj.allowed_evidence_codes == expected
+        try:
+            a = ["curated", "automatic"]
+            expected = [{"Evidence": {"IC", "TAS"}}, {"Evidence": {"IEA"}}]
+            GoObj.set_allowed_evidence_codes(a)
+            assert GoObj.allowed_evidence_codes == expected
+        finally:
+            delattr(GoObj, "allowed_evidence_codes")
 
     def test_set_allowed_evidence_codes_raises_GeneOntologyError(self, GoObj):
         with raises(GeneOntologyError):
@@ -69,9 +72,17 @@ class TestGO:
         finally:
             delattr(GoObj, "custom_association_file_path")
 
-    def test_iter_next(self, GoObj):
+    def test_iter_next_no_evidence_codes(self, GoObj):
         iterator = iter(GoObj)
         assert isinstance(next(iterator), dict)
+
+    def test_iter_next_with_evidence_codes(self, GoObj):
+        try:
+            GoObj.set_allowed_evidence_codes(a)
+            iterator = iter(GoObj)
+            assert isinstance(next(iterator), dict)
+        finally:
+            delattr(GoObj, "allowed_evidence_codes")
 
     def test_remove_unwanted_genes(self):
         d = {"a": 1, "b": 2, "c": 3}
