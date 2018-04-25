@@ -6,6 +6,11 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+test_deps = [
+    'pytest',
+    'pytest-cov',
+    'mypy']
+
 setup(
     name='agape',
     version='0.1',
@@ -31,10 +36,10 @@ setup(
         'networkx>=2.1',
         'biopython>=1.70',
         'goatools>=0.8'],
-    tests_require=[
-        'pytest',
-        'pytest-cov'
-        'mypy'],
+    tests_require=test_deps,
     setup_requires=[
         'pytest-runner'],
+    extras_require={
+        "test": test_deps
+    },
 )
