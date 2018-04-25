@@ -1,63 +1,92 @@
-from pytest import raises, mark
+from pytest import raises, mark, fixture
 from agape.gene_ontology import GO, prettify
 from agape.exceptions import GeneOntologyError
 import os
+import inspect
 
 
-class TestGO(object):
+@fixture(scope="module")
+def GoObj():
+    """Instantiate `GO` object with `go_dag`.
+    """
+    go = GO()
+    go.load_go_dag()
+    return go
+
+
+class TestGO:
     def setup_method(self):
         self.obj = GO()
 
-    def test_evidence_codes(self):
-        assert len(self.obj.evidence_codes) == 7
+    def test_evidence_codes(self, GoObj):
+        assert len(GoObj.evidence_codes) == 7
 
-    def test_evidence_codes_attrs(self):
-        for ec in self.obj.evidence_codes:
-            assert hasattr(self.obj, ec)
+    def test_evidence_codes_attrs(self, GoObj):
+        for ec in GoObj.evidence_codes:
+            assert hasattr(GoObj, ec)
 
-    def test_set_allowed_evidence_codes(self):
+    def test_set_allowed_evidence_codes(self, GoObj):
         a = ["curated", "automatic"]
         expected = [{"Evidence": {"IC", "TAS"}}, {"Evidence": {"IEA"}}]
-        self.obj.set_allowed_evidence_codes(a)
-        assert self.obj.allowed_evidence_codes == expected
+        GoObj.set_allowed_evidence_codes(a)
+        assert GoObj.allowed_evidence_codes == expected
 
-    def test_set_allowed_evidence_codes_raises_GeneOntologyError(self):
+    def test_set_allowed_evidence_codes_raises_GeneOntologyError(self, GoObj):
         with raises(GeneOntologyError):
-            self.obj.set_allowed_evidence_codes(["NOTAKEY"])
+            GoObj.set_allowed_evidence_codes(["NOTAKEY"])
 
-    def test_set(self):
+    def test_set(self, GoObj):
         name = "TESTNAME"
         value = "TESTVALUE"
-        self.obj.set(name, value)
-        assert hasattr(self.obj, name)
-        assert getattr(self.obj, name) == value
+        GoObj.set(name, value)
+        assert hasattr(GoObj, name)
+        assert getattr(GoObj, name) == value
 
-    def test_get(self):
+    def test_get(self, GoObj):
         name = "TESTNAME"
         value = "TESTVALUE"
-        setattr(self.obj, name, value)
-        assert hasattr(self.obj, name)
-        assert self.obj.get(name) == value
+        setattr(GoObj, name, value)
+        assert hasattr(GoObj, name)
+        assert GoObj.get(name) == value
 
-    @mark.io
-    def test_load_go_dag(self):
-        self.obj.load_go_dag()
-        assert hasattr(self.obj, "go_dag")
+    # @mark.io
+    def test_load_go_dag(self, GoObj):
+        assert hasattr(GoObj, "go_dag")
 
-    def test_load_go_dag_raises_GeneOntologyError(self):
+    def test_load_go_dag_raises_GeneOntologyError(self, GoObj):
         with raises(GeneOntologyError):
-            self.obj.load_go_dag("NOTAPATH")
+            GoObj.load_go_dag("NOTAPATH")
 
-    def test_iter_raises_GeneOntologyError(self):
-        self.obj.set("custom_association_file_path", "NOTAPATH")
-        iterator = iter(self.obj)
-        with raises(GeneOntologyError):
-            next(iterator)
+    def test_iter(self, GoObj):
+        assert inspect.isgenerator(iter(GoObj))
+
+    def test_iter_raises_GeneOntologyError(self, GoObj):
+        try:
+            GoObj.set("custom_association_file_path", "NOTAPATH")
+            with raises(GeneOntologyError):
+                iterator = iter(GoObj)
+                next(iterator)
+        finally:
+            delattr(GoObj, "custom_association_file_path")
+
+    def test_iter_next(self, GoObj):
+        iterator = iter(GoObj)
+        assert isinstance(next(iterator), dict)
 
     def test_remove_unwanted_genes(self):
         d = {"a": 1, "b": 2, "c": 3}
         w = set(("c"))
         assert self.obj.remove_unwanted_genes(w, d) == {"c": 3}
+
+    def test_term2ontology(self, GoObj):
+        go = GoObj
+        assert isinstance(go.term2ontology(), dict)
+
+    def test_ontology2term(self, GoObj):
+        go = GoObj
+        assert isinstance(go.ontology2term(), dict)
+
+
 
 
 class TestPrettify(object):

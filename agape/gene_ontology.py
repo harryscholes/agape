@@ -149,7 +149,7 @@ class GO(object):
         # Only consider GO terms from a particular ontology
         if ontology is not None:
             # term2ontology_dict = self.term2ontology()
-            d = self.ontology2term()
+            d = self.term2ontology()
             accepted_terms = d[ontology]
 
             for gene, go_terms in associations.items():
@@ -184,14 +184,20 @@ class GO(object):
     def term2ontology(self) -> dict:
         """Maps GO terms to their ontology.
         """
-        return {go_id: self.go_dag[go_id].namespace for go_id in self.go_dag}
+        if not hasattr(self, "go_dag"):
+            self.load_go_dag()
+        d = {go_id: self.go_dag[go_id].namespace for go_id in self.go_dag}
+        self.term2ontology_d = d
+        return d
 
     def ontology2term(self) -> defaultdict:
         """Maps ontologies to the GO terms in that ontology.
         """
-        d = self.term2ontology()
+        if not hasattr(self, "term2term2ontology_d"):
+            self.term2ontology()
+
         d_r = defaultdict(set)
-        for go_id, ontology in d.items():
+        for go_id, ontology in self.term2ontology_d.items():
             d_r[ontology].add(go_id)
         return d_r
 
