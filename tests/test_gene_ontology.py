@@ -89,14 +89,10 @@ class TestGO:
         assert self.obj.remove_unwanted_genes(w, d) == {"c": 3}
 
     def test_term2ontology(self, GoObj):
-        go = GoObj
-        assert isinstance(go.term2ontology(), dict)
+        assert isinstance(GoObj.term2ontology(), dict)
 
     def test_ontology2term(self, GoObj):
-        go = GoObj
-        assert isinstance(go.ontology2term(), dict)
-
-
+        assert isinstance(GoObj.ontology2term(), dict)
 
 
 class TestPrettify(object):
