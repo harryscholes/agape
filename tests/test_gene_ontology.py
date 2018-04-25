@@ -17,6 +17,7 @@ def GoObj():
 class TestGO:
     def setup_method(self):
         self.obj = GO()
+        self.example_evidence_codes = ["curated", "automatic"]
 
     def test_evidence_codes(self, GoObj):
         assert len(GoObj.evidence_codes) == 7
@@ -27,12 +28,11 @@ class TestGO:
 
     def test_set_allowed_evidence_codes(self, GoObj):
         try:
-            a = ["curated", "automatic"]
             expected = [{"Evidence": {"IC", "TAS"}}, {"Evidence": {"IEA"}}]
-            GoObj.set_allowed_evidence_codes(a)
+            GoObj.set_allowed_evidence_codes(self.example_evidence_codes)
             assert GoObj.allowed_evidence_codes == expected
         finally:
-            delattr(GoObj, "allowed_evidence_codes")
+            GoObj.set("allowed_evidence_codes", None)
 
     def test_set_allowed_evidence_codes_raises_GeneOntologyError(self, GoObj):
         with raises(GeneOntologyError):
@@ -78,11 +78,11 @@ class TestGO:
 
     def test_iter_next_with_evidence_codes(self, GoObj):
         try:
-            GoObj.set_allowed_evidence_codes(a)
+            GoObj.set_allowed_evidence_codes(self.example_evidence_codes)
             iterator = iter(GoObj)
             assert isinstance(next(iterator), dict)
         finally:
-            delattr(GoObj, "allowed_evidence_codes")
+            GoObj.set("allowed_evidence_codes", None)
 
     def test_remove_unwanted_genes(self):
         d = {"a": 1, "b": 2, "c": 3}
