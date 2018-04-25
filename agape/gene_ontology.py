@@ -116,7 +116,7 @@ class GO(object):
                     # Only iterate over proteins
                     if record_has(rec, self.protein):
                         # Only iterate over allowed evidence codes
-                        if self.allowed_evidence_codes:
+                        if self.allowed_evidence_codes is not None:
                             # Yield annotation if it has an allowed evidence code
                             if any([record_has(rec, ec) for ec in self.allowed_evidence_codes]):
                                 yield rec
