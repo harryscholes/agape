@@ -1,6 +1,8 @@
 # AGAPE
 **A**utomatic **G**ene ontology **A**nnotation **P**rediction in *S. pomb**E***
 
+/ˈaɡəpi/ as in ❤️, not /əˈɡeɪp/ as in 😮
+
 ## Status
 
 **Continuous integration** | [![Build Status](https://travis-ci.org/harryscholes/agape.svg?branch=master)](https://travis-ci.org/harryscholes/agape)
