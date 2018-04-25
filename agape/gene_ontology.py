@@ -69,7 +69,7 @@ class GO(object):
         try:
             self.allowed_evidence_codes = [self.evidence_codes[i] for i in
                                            allowed_evidence_codes] \
-                if len(allowed_evidence_codes) > 0 else False
+                if len(allowed_evidence_codes) > 0 else None
         except KeyError as err:
             raise GeneOntologyError(
                 f"Not a valid evidence code set: {err.args[0]}")
@@ -183,9 +183,7 @@ class GO(object):
     def term2ontology(self) -> dict:
         """Maps GO terms to their ontology.
         """
-        if not hasattr(self, "go_dag"):
-            self.load_go_dag()
-        d = {go_id: self.go_dag[go_id].namespace for go_id in self.go_dag}
+        d = {rec["GO_ID"]: rec["Aspect"] for rec in self}
         self.term2ontology_d = d
         return d
 
@@ -198,6 +196,7 @@ class GO(object):
         d_r = defaultdict(set)
         for go_id, ontology in self.term2ontology_d.items():
             d_r[ontology].add(go_id)
+        self.ontology2term_d = d_r
         return d_r
 
 
