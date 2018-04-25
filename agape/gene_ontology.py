@@ -2,7 +2,6 @@
 """
 import os
 from contextlib import contextmanager
-import pandas as pd
 from Bio.UniProt.GOA import gafiterator, record_has
 from goatools.obo_parser import GODag
 from goatools.associations import read_gaf

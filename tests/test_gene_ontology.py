@@ -1,7 +1,6 @@
-from pytest import raises, mark, fixture
+from pytest import raises, fixture
 from agape.gene_ontology import GO, prettify
 from agape.exceptions import GeneOntologyError
-import os
 import inspect
 
 
