@@ -1,62 +1,70 @@
-from pytest import raises
+from pytest import raises, fixture
 import pandas as pd
-from agape.load import Genes, biogrid
+from agape.load import Genes, Biogrid
 
 
-class TestGenes(object):
+@fixture(scope="module")
+def GenesObj():
+    """Instantiate `Genes` object.
+    """
+    genes = Genes()
+    return genes
+
+class TestGenes:
     def setup_method(self):
         self.obj = Genes()
         self.obj.viability()
 
-    def test_has_attrs(self):
-        assert hasattr(self.obj, "df")
-        assert hasattr(self.obj, "genes")
+    def test_has_attrs(self, GenesObj):
+        assert hasattr(GenesObj, "df")
+        assert hasattr(GenesObj, "genes")
 
-    def test_attrs_types(self):
-        assert isinstance(self.obj.df, pd.DataFrame)
-        assert isinstance(self.obj.genes, list)
+    def test_attrs_types(self, GenesObj):
+        assert isinstance(GenesObj.df, pd.DataFrame)
+        assert isinstance(GenesObj.genes, list)
 
-    def test_viability(self):
-        df = self.obj.viability()
+    def test_viability(self, GenesObj):
+        df = GenesObj.viability()
         assert df.shape == (4917, 2)
 
-    def test_viability_viable(self):
-        genes = self.obj.viability("viable")
+    def test_viability_viable(self, GenesObj):
+        genes = GenesObj.viability("viable")
         assert isinstance(genes, list)
         assert len(genes) == 3570
 
-    def test_viability_inviable(self):
-        genes = self.obj.viability("inviable")
+    def test_viability_inviable(self, GenesObj):
+        genes = GenesObj.viability("inviable")
         assert isinstance(genes, list)
         assert len(genes) == 1243
 
-    def test_viability_viable(self):
-        genes = self.obj.viability("condition-dependent")
+    def test_viability_viable(self, GenesObj):
+        genes = GenesObj.viability("condition-dependent")
         assert isinstance(genes, list)
         assert len(genes) == 104
 
-    def test_viability_raises_KeyError(self):
+    def test_viability_raises_KeyError(self, GenesObj):
         with raises(KeyError):
-            self.obj.viability("NOTAKEY")
+            GenesObj.viability("NOTAKEY")
 
 
-class TestBiogrid(object):
-    def test_load_biogrid(self):
-        df = biogrid()
-        assert df.shape == (71990, 24)
+@fixture(scope="module")
+def BiogridObj():
+    return Biogrid()
 
-    def test_load_biogrid_physical(self):
-        df = biogrid(interaction_type="physical")
-        assert df.shape == (12994, 24)
 
-    def test_load_biogrid_genetic(self):
-        df = biogrid(interaction_type="genetic")
-        assert df.shape == (58996, 24)
+class TestBiogrid:
+    def test_load_biogrid(self, BiogridObj):
+        assert BiogridObj().shape == (71990, 24)
 
-    def test_load_graph(self):
-        df = biogrid(graph=True)
-        assert df.shape == (71990, 2)
+    def test_load_biogrid_physical(self, BiogridObj):
+        assert BiogridObj(interaction_type="physical").shape == (12994, 24)
 
-    def test_raises_KeyError(self):
+    def test_load_biogrid_genetic(self, BiogridObj):
+        assert BiogridObj(interaction_type="genetic").shape == (58996, 24)
+
+    def test_load_graph(self, BiogridObj):
+        assert BiogridObj(graph=True).shape == (71990, 2)
+
+    def test_raises_KeyError(self, BiogridObj):
         with raises(KeyError):
-            biogrid(interaction_type="NOTAKEY")
+            BiogridObj(interaction_type="NOTAKEY")
