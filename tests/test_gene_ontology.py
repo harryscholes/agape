@@ -1,7 +1,26 @@
 from pytest import raises, fixture
-from agape.gene_ontology import GO, prettify
+from agape.gene_ontology import GO, prettify, go_annotations
 from agape.exceptions import GeneOntologyError
 import inspect
+import os
+from collections import defaultdict
+import itertools
+
+
+class TestGo_Annotations:
+    def setup_method(self):
+        filepath = os.path.join(os.environ["AGAPEDATA"],
+                                "gene_association.pombase")
+        self.obj = go_annotations(filepath)
+
+    def test_context_manager(self):
+        with self.obj as o:
+            assert inspect.isgenerator(o)
+
+    def test_context_manager_raises_FileNotFoundError(self):
+        with raises(FileNotFoundError):
+            with go_annotations("NOTAFILE") as o:
+                pass
 
 
 @fixture(scope="module")
@@ -93,6 +112,30 @@ class TestGO:
 
     def test_ontology2term(self, GoObj):
         assert isinstance(GoObj.ontology2term(), dict)
+
+    def test_get_associations(self, GoObj):
+        d = GoObj.get_associations()
+        assert isinstance(d, defaultdict)
+        assert hasattr(GoObj, "all_associations")
+        assert isinstance(GoObj.all_associations, defaultdict)
+        assert hasattr(GoObj, "associations")
+        assert len(list(itertools.chain(*d.values()))) == 37954
+
+    def test_get_associations_raises_GeneOntologyError(self, GoObj):
+        with raises(GeneOntologyError):
+            GoObj.get_associations(ontology="NOTAVALUE")
+
+    def test_get_associations_ontology_P(self, GoObj):
+        d = GoObj.get_associations(ontology="P")
+        assert len(list(itertools.chain(*d.values()))) == 12773
+
+    def test_get_associations_ontology_F(self, GoObj):
+        d = GoObj.get_associations(ontology="F")
+        assert len(list(itertools.chain(*d.values()))) == 9498
+
+    def test_get_associations_ontology_C(self, GoObj):
+        d = GoObj.get_associations(ontology="C")
+        assert len(list(itertools.chain(*d.values()))) == 15711
 
 
 class TestPrettify(object):

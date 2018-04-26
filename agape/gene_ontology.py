@@ -7,6 +7,7 @@ from goatools.obo_parser import GODag
 from goatools.associations import read_gaf
 from collections import defaultdict
 from .exceptions import GeneOntologyError
+import copy
 
 __all__ = ["GO", "prettify"]
 
@@ -14,15 +15,27 @@ data = os.environ["AGAPEDATA"]
 
 
 @contextmanager
-def go_annotations(file):
+def go_annotations(filepath: str):
     """Handles GO annotation file io.
+
+    # Arguments
+        filepath: str, filepath of GO annotation file
+
+    # Returns
+        gafiterator
+
+    # Raises
+        FileNotFoundError
     """
-    with open(file) as f:
-        iterator = gafiterator(f)
-        yield iterator
+    try:
+        with open(filepath) as f:
+            iterator = gafiterator(f)
+            yield iterator
+    except FileNotFoundError as err:
+        raise
 
 
-class GO(object):
+class GO:
     """Handles S. pombe gene ontology annotations.
 
     # Arguments
@@ -126,21 +139,27 @@ class GO(object):
     def get_associations(self, ontology=None):
         """Get associations of gene IDs to GO terms.
 
+        Ontologies: P = biological process, F = molecular function,
+            C = cellular component
+
         # Arguments
-            ontology: str (optional), one of {"biological_process",
-                "molecular_function", "cellular_component"}
+            ontology: str (optional), one of {"P", "F", "C"}
 
         # Returns
             dict: maps gene IDs to the GO terms it is annotated them
+
+        # Raises
+            GeneOntologyError: if `ontology` is not valid
         """
-        if ontology is not None:
-            if ontology not in ("biological_process", "molecular_function",
-                                "cellular_component"):
-                raise GeneOntologyError(f"Not a valid ontology: {ontology}")
+        if ontology is not None and ontology not in ("P", "F", "C"):
+            raise GeneOntologyError(f"Not a valid ontology: {ontology}")
 
         # Load a defaultdict mapping gene_ids to the GO terms annotated to them
-        all_associations = read_gaf(os.path.join(data,
-                                                 "gene_association.pombase"))
+        if not hasattr(self, "all_associations"):
+            self.all_associations = read_gaf(os.path.join(data, "gene_association.pombase"))
+
+        all_associations = copy.deepcopy(self.all_associations)
+
         # Remove genes that do not have any annotations with an accepted
         # evidence code
         wanted_genes = set(rec["DB_Object_ID"] for rec in self)
@@ -148,9 +167,9 @@ class GO(object):
         # Only consider GO terms from a particular ontology
         if ontology is not None:
             # term2ontology_dict = self.term2ontology()
-            d = self.term2ontology()
+            d = self.ontology2term()
             accepted_terms = d[ontology]
-
+            # Iterate over dictionary of associations
             for gene, go_terms in associations.items():
                 for go_id in go_terms.copy():
                     # Remove obsolete terms
@@ -183,9 +202,10 @@ class GO(object):
     def term2ontology(self) -> dict:
         """Maps GO terms to their ontology.
         """
-        d = {rec["GO_ID"]: rec["Aspect"] for rec in self}
-        self.term2ontology_d = d
-        return d
+        if not hasattr(self, "term2ontology_d"):
+            d = {rec["GO_ID"]: rec["Aspect"] for rec in self}
+            self.term2ontology_d = d
+        return self.term2ontology_d
 
     def ontology2term(self) -> defaultdict:
         """Maps ontologies to the GO terms in that ontology.
