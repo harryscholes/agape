@@ -2,12 +2,12 @@
 """
 import os
 from contextlib import contextmanager
-import pandas as pd
 from Bio.UniProt.GOA import gafiterator, record_has
 from goatools.obo_parser import GODag
 from goatools.associations import read_gaf
 from collections import defaultdict
 from .exceptions import GeneOntologyError
+import copy
 
 __all__ = ["GO", "prettify"]
 
@@ -15,15 +15,27 @@ data = os.environ["AGAPEDATA"]
 
 
 @contextmanager
-def go_annotations(file):
+def go_annotations(filepath: str):
     """Handles GO annotation file io.
+
+    # Arguments
+        filepath: str, filepath of GO annotation file
+
+    # Returns
+        gafiterator
+
+    # Raises
+        FileNotFoundError
     """
-    with open(file) as f:
-        iterator = gafiterator(f)
-        yield iterator
+    try:
+        with open(filepath) as f:
+            iterator = gafiterator(f)
+            yield iterator
+    except FileNotFoundError as err:
+        raise
 
 
-class GO(object):
+class GO:
     """Handles S. pombe gene ontology annotations.
 
     # Arguments
@@ -70,7 +82,7 @@ class GO(object):
         try:
             self.allowed_evidence_codes = [self.evidence_codes[i] for i in
                                            allowed_evidence_codes] \
-                if len(allowed_evidence_codes) > 0 else False
+                if len(allowed_evidence_codes) > 0 else None
         except KeyError as err:
             raise GeneOntologyError(
                 f"Not a valid evidence code set: {err.args[0]}")
@@ -116,7 +128,7 @@ class GO(object):
                     # Only iterate over proteins
                     if record_has(rec, self.protein):
                         # Only iterate over allowed evidence codes
-                        if self.allowed_evidence_codes:
+                        if self.allowed_evidence_codes is not None:
                             # Yield annotation if it has an allowed evidence code
                             if any([record_has(rec, ec) for ec in self.allowed_evidence_codes]):
                                 yield rec
@@ -127,21 +139,27 @@ class GO(object):
     def get_associations(self, ontology=None):
         """Get associations of gene IDs to GO terms.
 
+        Ontologies: P = biological process, F = molecular function,
+            C = cellular component
+
         # Arguments
-            ontology: str (optional), one of {"biological_process",
-                "molecular_function", "cellular_component"}
+            ontology: str (optional), one of {"P", "F", "C"}
 
         # Returns
             dict: maps gene IDs to the GO terms it is annotated them
+
+        # Raises
+            GeneOntologyError: if `ontology` is not valid
         """
-        if ontology is not None:
-            if ontology not in ("biological_process", "molecular_function",
-                                "cellular_component"):
-                raise GeneOntologyError(f"Not a valid ontology: {ontology}")
+        if ontology is not None and ontology not in ("P", "F", "C"):
+            raise GeneOntologyError(f"Not a valid ontology: {ontology}")
 
         # Load a defaultdict mapping gene_ids to the GO terms annotated to them
-        all_associations = read_gaf(os.path.join(data,
-                                                 "gene_association.pombase"))
+        if not hasattr(self, "all_associations"):
+            self.all_associations = read_gaf(os.path.join(data, "gene_association.pombase"))
+
+        all_associations = copy.deepcopy(self.all_associations)
+
         # Remove genes that do not have any annotations with an accepted
         # evidence code
         wanted_genes = set(rec["DB_Object_ID"] for rec in self)
@@ -151,7 +169,7 @@ class GO(object):
             # term2ontology_dict = self.term2ontology()
             d = self.ontology2term()
             accepted_terms = d[ontology]
-
+            # Iterate over dictionary of associations
             for gene, go_terms in associations.items():
                 for go_id in go_terms.copy():
                     # Remove obsolete terms
@@ -184,15 +202,21 @@ class GO(object):
     def term2ontology(self) -> dict:
         """Maps GO terms to their ontology.
         """
-        return {go_id: self.go_dag[go_id].namespace for go_id in self.go_dag}
+        if not hasattr(self, "term2ontology_d"):
+            d = {rec["GO_ID"]: rec["Aspect"] for rec in self}
+            self.term2ontology_d = d
+        return self.term2ontology_d
 
     def ontology2term(self) -> defaultdict:
         """Maps ontologies to the GO terms in that ontology.
         """
-        d = self.term2ontology()
+        if not hasattr(self, "term2term2ontology_d"):
+            self.term2ontology()
+
         d_r = defaultdict(set)
-        for go_id, ontology in d.items():
+        for go_id, ontology in self.term2ontology_d.items():
             d_r[ontology].add(go_id)
+        self.ontology2term_d = d_r
         return d_r
 
 

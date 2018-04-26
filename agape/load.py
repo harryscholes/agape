@@ -3,7 +3,7 @@
 import os
 import pandas as pd
 
-__all__ = ["Genes", "biogrid"]
+__all__ = ["Genes", "Biogrid"]
 
 data = os.environ["AGAPEDATA"]
 
@@ -48,38 +48,43 @@ class Genes(object):
         return list(df.GeneID)
 
 
-def biogrid(interaction_type=None, graph=False):
+class Biogrid:
     """Load S. pombe BioGRID database.
-
-    # Arguments
-        interaction_type: str, {physical, genetic}
-        graph: bool, if True return edge list
-
-    # Returns
-        DataFrame: BioGRID database
-
-    # Raises
-        KeyError: if `interaction_type` is not {physical, genetic}
     """
-    f = "BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.158.tab2.txt"
-    df = pd.read_csv(os.path.join(data, f), sep="\t")
+    def __init__(self):
+        f = "BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.158.tab2.txt"
+        df = pd.read_csv(os.path.join(data, f), sep="\t")
+        df = df[(df["Organism Interactor A"] == 284812) &
+                (df["Organism Interactor B"] == 284812)]
+        self.df = df
 
-    df = df[(df["Organism Interactor A"] == 284812) &
-            (df["Organism Interactor B"] == 284812)]
+    def __call__(self, interaction_type=None, graph=False):
+        """Call the class instance to filter the loaded interactions.
 
-    if interaction_type is not None:
+        # Arguments
+            interaction_type: str, {physical, genetic}
+            graph: bool, if True return edge list
 
-        interaction_types = df["Experimental System Type"].unique()
+        # Returns
+            DataFrame: BioGRID database
 
-        if interaction_type not in interaction_types:
-            raise KeyError(("`interaction_type` must be one of:",
-                            f"{', '.join(interaction_types)}"))
+        # Raises
+            KeyError: if `interaction_type` is not {physical, genetic}
+        """
+        df = self.df
+        if interaction_type is not None:
 
-        df = df[df["Experimental System Type"] == interaction_type]
+            interaction_types = df["Experimental System Type"].unique()
 
-    if graph:
-        df = df[['Systematic Name Interactor A',
-                 'Systematic Name Interactor B']]
-        df.columns = ["source", "target"]
+            if interaction_type not in interaction_types:
+                raise KeyError(("`interaction_type` must be one of:",
+                                f"{', '.join(interaction_types)}"))
 
-    return df
+            df = df[df["Experimental System Type"] == interaction_type]
+
+        if graph:
+            df = df[['Systematic Name Interactor A',
+                     'Systematic Name Interactor B']]
+            df.columns = ["source", "target"]
+
+        return df
