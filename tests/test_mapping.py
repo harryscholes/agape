@@ -1,6 +1,5 @@
 from pytest import raises
 import pandas as pd
-
 from agape.mapping import dictify, gene2symbol
 
 
@@ -25,11 +24,9 @@ class TestDictify(object):
 
 
 class TestGene2Symbol(object):
-    def setup_method(self):
-        self.d = gene2symbol("ID", "Symbol")
-
     def test_returns_dict(self):
-        assert isinstance(self.d, dict)
+        d = gene2symbol("ID", "Symbol")
+        assert isinstance(d, dict)
 
     def test_raises_keyerror(self):
         with raises(KeyError):
