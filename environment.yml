@@ -12,7 +12,9 @@ dependencies:
   - scikit-learn
   - pip:
     - biopython
-    - goatools
+    # Temporary fix while PyPI version of GOATOOLS GAF reader fails
+    - 'git+https://github.com/tanghaibao/goatools'
     - mypy
     - pytest
     - pytest-cov
+    - '--editable=.["test"]'
