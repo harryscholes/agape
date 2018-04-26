@@ -18,6 +18,8 @@ cache:
 before_install:
   - bash required_data.sh  # Download data
   - pip install codecov
+  # Temporary fix while PyPI version of GOATOOLS GAF reader fails
+  - pip install git+https://github.com/tanghaibao/goatools
 
 install:
   - pip install -e ".[test]"
