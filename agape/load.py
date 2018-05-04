@@ -3,7 +3,7 @@
 import os
 import pandas as pd
 
-__all__ = ["Genes", "Biogrid"]
+__all__ = ["Genes", "Biogrid", "STRING"]
 
 data = os.environ["AGAPEDATA"]
 
@@ -88,3 +88,36 @@ class Biogrid:
             df.columns = ["source", "target"]
 
         return df
+
+
+class STRING:
+    """Load S. pombe STRING database.
+    """
+    def __init__(self):
+        f = "4896.protein.links.detailed.v10.5.txt"
+        self.df = pd.read_csv(os.path.join(data, f), sep=" ")
+        self.interaction_types = (
+            'neighborhood', 'fusion', 'cooccurence', 'coexpression',
+            'experimental', 'database')
+
+    def get(self, interaction_type=None):
+        """Call the class instance to filter the loaded interactions.
+
+        # Arguments
+            interaction_type: str, {neighborhood, fusion, cooccurence,
+                coexpression, experimental, database}
+
+        # Returns
+            DataFrame: STRING database
+
+        # Raises
+            KeyError: if `interaction_type` is not in {neighborhood, fusion,
+                cooccurence, coexpression, experimental, database}
+        """
+        if all((interaction_type is not None,
+                interaction_type not in self.interaction_types)):
+
+            raise KeyError(
+                f"`interaction_type` must be one of: {self.interaction_types}")
+
+        return self.df[["protein1", "protein2", interaction_type]]
