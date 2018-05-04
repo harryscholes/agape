@@ -1,6 +1,6 @@
 from pytest import raises, fixture
 import pandas as pd
-from agape.load import Genes, Biogrid
+from agape.load import Genes, Biogrid, STRING
 
 
 @fixture(scope="module")
@@ -54,7 +54,7 @@ def BiogridObj():
 
 class TestBiogrid:
     def test_load_biogrid(self, BiogridObj):
-        assert BiogridObj().shape == (71990, 24)
+        assert BiogridObj.df.shape == (71990, 24)
 
     def test_load_biogrid_physical(self, BiogridObj):
         assert BiogridObj(interaction_type="physical").shape == (12994, 24)
