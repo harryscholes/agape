@@ -1,6 +1,6 @@
 from pytest import raises, fixture
 import pandas as pd
-from agape.load import Genes, Biogrid
+from agape.load import Genes, Biogrid, STRING
 
 
 @fixture(scope="module")
@@ -68,3 +68,31 @@ class TestBiogrid:
     def test_raises_KeyError(self, BiogridObj):
         with raises(KeyError):
             BiogridObj(interaction_type="NOTAKEY")
+
+
+@fixture(scope="module")
+def STRINGObj():
+    return STRING()
+
+
+class TestSTRING:
+    def test_string_interaction_types(self, STRINGObj):
+        assert hasattr(STRINGObj, "interaction_types")
+        assert isinstance(STRINGObj.interaction_types, tuple)
+        assert STRINGObj.interaction_types == (
+            'neighborhood', 'fusion', 'cooccurence', 'coexpression',
+            'experimental', 'database')
+
+    def test_string_df(self, STRINGObj):
+        assert hasattr(STRINGObj, "df")
+        assert isinstance(STRINGObj.df, pd.DataFrame)
+        assert STRINGObj.df.shape == (1657582, 10)
+
+    def test_get(self, STRINGObj):
+        df = STRINGObj.get("experimental")
+        assert isinstance(df, pd.DataFrame)
+        assert df.shape == (1657582, 3)
+
+    def test_get_raises_KeyError(self, STRINGObj):
+        with raises(KeyError):
+            STRINGObj.get(interaction_type="NOTAKEY")
