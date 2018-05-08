@@ -9,6 +9,7 @@ https://github.com/VGligorijevic/deepNF.
 
 Usage:
     python preprocessing.py -i $AGAPEDATA/deepNF -o $AGAPEDATA/deepNF
+    python preprocessing.py -i $AGAPEDATA/deepNF/test -o $AGAPEDATA/deepNF/test --genes 20
 '''
 import numpy as np
 import scipy.io as sio
@@ -16,6 +17,7 @@ from scipy.sparse import coo_matrix, csc_matrix
 import os
 import argparse
 from agape.utils import directory_exists
+import glob
 
 ##########################
 # Command line arguments #
@@ -36,7 +38,7 @@ args = parser.parse_args()
 # io #
 ######
 
-input_path  = directory_exists(args.input_path)
+input_path = directory_exists(args.input_path)
 output_path = directory_exists(args.output_path)
 
 
@@ -160,14 +162,14 @@ if __name__ == "__main__":
     string_nets = ['neighborhood', 'fusion',       'cooccurence',
                    'coexpression', 'experimental', 'database']
 
-    filenames = []
-    for net in string_nets:
-        filenames.append(
-            os.path.join(
-                output_path,
-                f'yeast_string_{net}_adjacency.txt'))
+    filenames = glob.glob(os.path.join(input_path, "*adjacency.txt"))
+
+    print(filenames)
 
     Nets = load_networks(filenames)
+
+    # e.g. 'yeast'
+    output_basename = os.path.basename(filenames[0]).split("_")[0]
 
     # Compute RWR + PPMI
     for i in range(0, len(Nets)):
@@ -180,5 +182,5 @@ if __name__ == "__main__":
         sio.savemat(
             os.path.join(
                 output_path,
-                f'yeast_net_{str(i+1)}_K{args.K}_alpha{args.alpha}'),
+                f'{output_basename}_net_{i}_K{args.K}_alpha{args.alpha}'),
             {"Net": net})
