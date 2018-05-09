@@ -95,7 +95,8 @@ architectures = {k: v for k, v in architectures_dict.items()
 
 # Validation type
 validation_types = {
-    'cv': ['P_1', 'P_2', 'P_3', 'F_1', 'F_2', 'F_3', 'C_1', 'C_2', 'C_3']}
+    'cv': ('P_3', 'P_2', 'P_1', 'F_3', 'F_2', 'F_1', 'C_3', 'C_2', 'C_1'),
+    'cv2': ['P_1', 'P_2', 'P_3', 'F_1', 'F_2', 'F_3', 'C_1', 'C_2', 'C_3']}
 
 try:
     annotation_types = validation_types[validation]
@@ -203,7 +204,7 @@ def main():
             mid_model.save(Path(models_path, f"{model_name}.h5"))
 
     elif precalculated_embeddings:
-        model_names = ["yeast_MDA_arch_2"]
+        model_names = ["yeast_MDA_arch_2"]  # TODO remove hardcoded path
         mid_model = load_model(os.path.expandvars(f"$AGAPEDATA/{model_names[0]}.h5"))
 
     ###############################
@@ -212,14 +213,13 @@ def main():
 
     results_summary_file = os.path.join(
         results_path,
-        f'deepNF_{model_type}_{"{ofile_tags}" if ofile_tags != "" else ""}_{validation}_performance_{org}.txt')
+        f'deepNF_{model_type}_{"{ofile_tags}_" if ofile_tags != "" else ""}{validation}_performance_{org}.txt')
 
     with open(results_summary_file, 'w') as fout:
 
         for model_name in model_names:
             print(f"Running for: {model_name}")
-            fout.write(model_name)
-            fout.write('\n')
+            fout.write(f'\n{model_name}\n')
 
             my_file = Path(models_path, f"{model_name}.h5")
 
@@ -245,10 +245,11 @@ def main():
                             results_path,
                             f'{model_name}_{level}_{validation}_performance_trials.txt'))
 
-                    fout.write(f'{level}')
+                    fout.write(f'\n{level}\n')
 
                     for m in measures:
-                        fout.write(f'{perf[m]:.5f}\n')
+                        fout.write(f'{m} {perf[m]:.5f}\n')
+                    fout.write('\n')
 
 
 ###################

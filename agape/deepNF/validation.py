@@ -87,15 +87,14 @@ def cross_validation(X, y, n_trials=5, trial_splits=None, fname=None):
     X = np.delete(X, del_rid, axis=0)
 
     # range of hyperparameters
-    C_range = 10.**np.arange(-1, 3)
-    gamma_range = 10.**np.arange(-3, 1)
+    C_range = 10.**np.arange(-1, 1)  # TODO replace with 10.**np.arange(-1, 3)
+    gamma_range = 10.**np.arange(-3, -1)  # TODO replace with 10.**np.arange(-3, 1)
 
     # pre-generating kernels
     print("### Pregenerating kernels...")
     K_rbf = {}
     for gamma in gamma_range:
         K_rbf[gamma] = rbf_kernel(X, gamma=gamma)
-    print("### Done.")
 
     # performance measures
     perf = dict()
@@ -170,6 +169,7 @@ def cross_validation(X, y, n_trials=5, trial_splits=None, fname=None):
         # Compute performance on test set
         y_score[:, idx] = clf.decision_function(K_rbf[gamma_opt][test_idx, :][:, train_idx])
         y_pred[:, idx] = clf.predict(K_rbf[gamma_opt][test_idx, :][:, train_idx])
+        print("Number of positive predictions:", len(y_pred.nonzero()[0]))
         perf_trial = evaluate_performance(y_test, y_score, y_pred)
         pr_micro.append(perf_trial['m-aupr'])
         pr_macro.append(perf_trial['M-aupr'])
@@ -189,7 +189,7 @@ def cross_validation(X, y, n_trials=5, trial_splits=None, fname=None):
         fout = open(fname, 'w')
         fout.write("aupr[micro], aupr[macro], F_max, accuracy\n")
         for ii in range(0, n_trials):
-            fout.write(pr_micro[ii], pr_macro[ii], fmax[ii], acc[ii])
+            fout.write(f'{pr_micro[ii]}, {pr_macro[ii]}, {fmax[ii]}, {acc[ii]}')
         fout.close()
 
     return perf
