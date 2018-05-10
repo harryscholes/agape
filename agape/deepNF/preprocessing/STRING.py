@@ -10,9 +10,9 @@ Usage:
 '''
 import os
 import numpy as np
-# import pandas as pd
+import pandas as pd
 from agape.load import STRING
-from agape.utils import directory_exists
+from agape.utils import directory_exists, stdout
 import argparse
 
 
@@ -21,7 +21,8 @@ import argparse
 ##########################
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--output-path', default='$AGAPEDATA/deepNF', type=str)
+parser.add_argument('-o', '--output-path', default='$AGAPEDATA/deepNF',
+                    type=str)
 args = parser.parse_args()
 
 
@@ -61,13 +62,16 @@ class STRING_deepNF(STRING):
                                    f"yeast_string_{col}_adjacency.txt"),
                       sep="\t", index=False, header=False)
 
+        pd.Series(self.d).to_csv(os.path.join(output_path,
+                                              'yeast_net_genes.csv'))
+
 
 def main():
     print(__doc__)
-    print(f"Command line arguments:\n    {args}\n")
+    stdout("Command line arguments", args)
     s = STRING_deepNF()
     s.convert_ids_to_numbers()
-    print(f'Writing networks to {output_path}')
+    stdout('Writing networks to', output_path)
     s.write()
 
 
