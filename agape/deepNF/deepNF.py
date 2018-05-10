@@ -27,6 +27,8 @@ To run:
 
 
     python deepNF.py -d $AGAPEDATA/deepNF/test
+
+    python deepNF.py -p True -m $AGAPEDATA -n 1
 '''
 import os
 # os.environ["KERAS_BACKEND"] = "tensorflow"
@@ -147,7 +149,7 @@ def main():
         N = sio.loadmat(filepath, squeeze_me=True)['Net'].toarray()
         return N
 
-    network_paths = glob.glob(os.path.join(data_path, "*.mat"))
+    network_paths = sorted(glob.glob(os.path.join(data_path, "*.mat")))
     print(network_paths)
 
     basename = os.path.basename(network_paths[0]).split("_")[0]
