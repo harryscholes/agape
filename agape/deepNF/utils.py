@@ -1,8 +1,13 @@
 import os
+import glob
+import scipy
 from pathlib import Path
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+from agape.utils import stdout
+from sklearn.preprocessing import minmax_scale
+import pandas as pd
 
 
 def mkdir(directory):
@@ -23,3 +28,71 @@ def plot_loss(history, models_path, model_name):
     plt.legend(['train', 'validation'], loc='upper left')
     plt.savefig(str(Path(models_path, model_name + '_loss.png')),
                 bbox_inches='tight')
+
+
+def _load_ppmi_matrix(filepath):
+    '''Load a PPMI matrix of a network adjacency matrix.
+
+    # Arguments:
+        filepath: str, path to .mat file
+
+    # Returns
+        M: numpy.ndarray, PPMI matrix
+
+    # Raises
+        OSError: if .mat file does not exist at `filepath`
+    '''
+    if not os.path.exists(filepath):
+        raise OSError("Network not found at:", filepath)
+
+    print(f"Loading network from {filepath}")
+    M = scipy.io.loadmat(filepath, squeeze_me=True)['Net'].toarray()
+    return M
+
+
+def load_ppmi_matrices(data_path):
+    '''Load PPMI matrices.
+
+    # Arguments
+        data_path: str, path to .mat files
+
+    # Returns
+        Ms: List[numpy.ndarray], PPMI matrices
+        dims: List[int], dimensions of matrices
+    '''
+    paths = sorted(glob.glob(os.path.join(data_path, "*.mat")))
+    stdout('Networks', paths)
+
+    Ms = []
+    for p in paths:
+        M = _load_ppmi_matrix(p)
+        Ms.append(minmax_scale(M))
+
+    dims = [i.shape[1] for i in Ms]
+    stdout('Input dims', dims)
+    return Ms, dims
+
+
+def gene2index(mapping_file=None):
+    '''Returns a dictionary mapping genes to PPMI matrix indicies.
+
+    # Arguments
+        mapping_file: str, path to mapping file
+
+    # Returns
+        d: dict, mapper
+
+    # Raises
+        FileNotFoundError: if `mapping_file` not found
+    '''
+    if mapping_file is None:
+        mapping_file = os.path.join(
+            os.path.expandvars('$AGAPEDATA'),
+            'deepNF', 'networks', 'yeast_net_genes.csv')
+    try:
+        df = pd.read_csv(mapping_file, header=None, index_col=0)
+    except FileNotFoundError:
+        raise
+
+    d = df[1].to_dict()
+    return d
