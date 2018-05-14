@@ -3,11 +3,12 @@ import glob
 from scipy import io
 from pathlib import Path
 import matplotlib
-matplotlib.use('agg')
+# matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from agape.utils import stdout
 from sklearn.preprocessing import minmax_scale
 import pandas as pd
+import numpy as np
 
 
 def mkdir(directory):
@@ -96,3 +97,23 @@ def gene2index(mapping_file=None):
 
     d = df[1].to_dict()
     return d
+
+
+def load_embeddings(embeddings_file: str) -> np.ndarray:
+    '''Load embeddings from file.
+
+    # Arguments
+        embeddings_file: str, path to embeddings file *_features.mat file
+
+    # Returns
+        embeddings: np.ndarray, node embeddings
+
+    # Raises
+        FileNotFoundError: if `embeddings_file` does not exist
+    '''
+    try:
+        M = io.loadmat(embeddings_file, squeeze_me=True)['embeddings']
+        return M
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f'Embeddings not found at {embeddings_file}') from None
