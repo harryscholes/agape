@@ -1,5 +1,8 @@
 '''
-Generate embeddings from the middle layer of the autoencoder.
+Calculate embeddings from the middle layer of the autoencoder.
+
+Usage:
+    python calculate_embeddings.py
 '''
 import os
 import argparse
@@ -62,10 +65,10 @@ def main():
     else:
         raise Warning("`--architecture` must be supplied")
 
-    ###############################
-    # Generate network embeddings #
-    ###############################
-    stdout("Running for", model_name)
+    ################################
+    # Calculate network embeddings #
+    ################################
+    stdout("Calculating embeddings for", model_name)
 
     embeddings = minmax_scale(mid_model.predict(networks))
 
@@ -73,7 +76,7 @@ def main():
         os.path.expandvars(results_path),
         f'{model_name}_features.mat')
 
-    stdout("Saving embeddings to", embeddings_path)
+    stdout("Writing embeddings to", embeddings_path)
 
     sio.savemat(embeddings_path, {'embeddings': embeddings})
 
