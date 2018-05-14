@@ -1,6 +1,6 @@
 import os
 import glob
-import scipy
+from scipy import io
 from pathlib import Path
 import matplotlib
 matplotlib.use('agg')
@@ -46,7 +46,7 @@ def _load_ppmi_matrix(filepath):
         raise OSError("Network not found at:", filepath)
 
     print(f"Loading network from {filepath}")
-    M = scipy.io.loadmat(filepath, squeeze_me=True)['Net'].toarray()
+    M = io.loadmat(filepath, squeeze_me=True)['Net'].toarray()
     return M
 
 
