@@ -40,9 +40,9 @@ import pickle
 import argparse
 import scipy.io as sio
 import glob
-from validation import cross_validation
-from autoencoders import MDA
-from utils import mkdir, plot_loss
+from agape.deepNF.validation import cross_validation
+from agape.deepNF.autoencoders import MDA
+from agape.deepNF.utils import mkdir, plot_loss
 
 
 ##########################
@@ -195,7 +195,7 @@ def main():
 
             plot_loss(history, models_path, model_name)
 
-            with open(Path(models_path, 'training_history.pkl'), 'wb') as f:
+            with open(Path(models_path, f'{model_name}_training_history.pkl'), 'wb') as f:
                 pickle.dump(history.history, f)
 
             # Extract middle layer
