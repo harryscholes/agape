@@ -1,5 +1,5 @@
 '''
-Train a multi-modal deep autoencoder on multiple networks.
+Train a multimodal deep autoencoder on multiple networks.
 
 Usage:
     python train_autoencoder.py
