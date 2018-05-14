@@ -1,6 +1,5 @@
 '''
-Generate embeddings from the middle layer of the autoencoder and use these to
-train a classifier with k-fold cross-validation.
+Train a classifier on node embeddings with k-fold cross-validation.
 
 Usage:
     python cv.py
