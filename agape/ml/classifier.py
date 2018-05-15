@@ -23,6 +23,9 @@ class Classifier:
         pipeline.append(('estimator', clf))
         self.clf = Pipeline(pipeline)
 
+    def __name__(self):
+        return self.__class__.__name__
+
     def grid_search(self, X, y, parameters):
         self.grid_search_parameters = {'estimator__' + k: v for k, v
                                        in parameters.items()}
