@@ -8,7 +8,7 @@ Code originally by Vladimir Gligorijevi, adapted from
 https://github.com/VGligorijevic/deepNF.
 
 Usage:
-    python preprocessing.py -i $AGAPEDATA/deepNF -o $AGAPEDATA/deepNF
+    python preprocessing.py
     python preprocessing.py -i $AGAPEDATA/deepNF/test -o $AGAPEDATA/deepNF/test --genes 20
 '''
 import numpy as np
@@ -18,15 +18,16 @@ import os
 import argparse
 from agape.utils import directory_exists
 import glob
+import pandas as pd
 
 ##########################
 # Command line arguments #
 ##########################
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-i', '--input-path',  default='$AGAPEDATA/deepNF',
+parser.add_argument('-i', '--input-path',  default='$AGAPEDATA/deepNF/networks',
                     type=str)
-parser.add_argument('-o', '--output-path', default='$AGAPEDATA/deepNF',
+parser.add_argument('-o', '--output-path', default='$AGAPEDATA/deepNF/networks',
                     type=str)
 parser.add_argument('--K',     default=3,    type=int)
 parser.add_argument('--alpha', default=.98,  type=float)
@@ -172,7 +173,7 @@ if __name__ == "__main__":
     output_basename = os.path.basename(filenames[0]).split("_")[0]
 
     # Compute RWR + PPMI
-    for i in range(0, len(Nets)):
+    for i in range(1, len(Nets) + 1):
         print(f"Computing PPMI for network {string_nets[i]}")
         net = Nets[i]
         net = RWR(net)
