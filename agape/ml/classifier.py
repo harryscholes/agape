@@ -1,7 +1,7 @@
 '''Classifiers.
 '''
 from sklearn.pipeline import Pipeline
-from sklearn.grid_search import GridSearchCV
+from sklearn.model_selection import GridSearchCV
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
