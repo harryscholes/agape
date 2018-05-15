@@ -101,6 +101,7 @@ class TestSVClassifier:
              [0.00885798, 0.99114202],
              [0.01053052, 0.98946948],
              [0.76418338, 0.23581662]])
+        print(SVClf.predict_proba(X))
         assert np.allclose(SVClf.predict_proba(X), expected)
 
 
