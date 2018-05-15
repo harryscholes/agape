@@ -61,6 +61,15 @@ class Classifier:
         self.probabilities = self.get_clf().predict_proba(X)
         return self.probabilities
 
+    def decision_function(self, X):
+        try:
+            self.decisions = self.get_clf().decision_function(X)
+            return self.decisions
+        except AttributeError as err:
+            raise AttributeError(
+                f'decision_function is not implemented for {self.__name__()}')\
+                from None
+
     def accuracy(self, y):
         self.accuracy_score = accuracy_score(y, self.predictions)
         return self.accuracy_score
