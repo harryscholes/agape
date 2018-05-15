@@ -26,14 +26,21 @@ class Classifier:
     def __name__(self):
         return self.__class__.__name__
 
-    def grid_search(self, X, y, parameters):
+    def grid_search(self, X, y, parameters, scoring=None, cv=5, refit=True):
         self.grid_search_parameters = {'estimator__' + k: v for k, v
                                        in parameters.items()}
         clf = self.clf
-        self.clf_grid_search = GridSearchCV(clf, self.grid_search_parameters)
+
+        self.clf_grid_search = GridSearchCV(
+            clf,
+            self.grid_search_parameters,
+            cv=cv,
+            scoring=scoring,
+            refit=refit)
+
         self.clf_grid_search.fit(X, y)
-        print('`clf.best_estimator_`:\n\n',
-              self.clf_grid_search.best_estimator_, sep='')
+        print('\n`clf.best_estimator_`:\n',
+              self.clf_grid_search.best_estimator_, '\n', sep='')
 
     def fit(self, X, y):
         # Fit classifier using the best parameters from GridSearchCV
