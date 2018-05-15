@@ -103,5 +103,4 @@ class RFClassifier(Classifier):
                 RandomForestClassifier(
                     n_jobs=-1,
                     random_state=random_state),
-                n_jobs=-1),
-            scale=True)
+                n_jobs=-1))
