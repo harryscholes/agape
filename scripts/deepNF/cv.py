@@ -87,7 +87,7 @@ def main():
         annotation_dir = os.path.join(
             os.path.expandvars('$AGAPEDATA'), 'annotations')
         annotation_file = 'yeast_annotations.mat'
-        print('Loading GO annotations')
+        stdout('Loading GO annotations')
 
         GO = sio.loadmat(
             os.path.join(annotation_dir, annotation_file))
@@ -102,7 +102,7 @@ def main():
 
     with open(results_summary_file, 'w') as fout:
         for level in annotation_types:
-            print(f"Running for level: {level}")
+            stdout('Running for level', level)
             if validation == 'cv':
                 perf = cross_validation(
                     embeddings,
