@@ -1,181 +1,164 @@
 import numpy as np
-from sklearn import svm
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.metrics import accuracy_score, f1_score
-from sklearn.model_selection import ShuffleSplit, KFold
+from sklearn.metrics import accuracy_score, f1_score, make_scorer
+from sklearn.model_selection import ShuffleSplit
 from scipy.stats import sem as std
-from sklearn.metrics.pairwise import rbf_kernel
+from agape.ml.classifier import SVClassifier
+from agape.utils import stdout
 
 
-def real_AUPR(label, score):
-    """Calculate AUPR.
-    """
-    label = label.flatten()
-    score = score.flatten()
-
-    order = np.argsort(score)[::-1]
-    label = label[order]
-
-    P = np.count_nonzero(label)
-
-    TP = np.cumsum(label, dtype=float)
-    PP = np.arange(1, len(label)+1, dtype=float)
-
-    x = np.divide(TP, P)  # recall
-    y = np.divide(TP, PP)  # precision
-
-    pr = np.trapz(y, x)
-    f = np.divide(2*x*y, (x + y))
-    idx = np.where((x + y) != 0)[0]
-    if len(idx) != 0:
-        f = np.max(f[idx])
-    else:
-        f = 0.0
-
-    return pr, f
+def AUPR(y_true, y_score):
+    '''Area under the precision-recall curve.
+    '''
+    y_true = y_true.flatten()
+    y_score = y_score.flatten()
+    order = np.argsort(y_score)[::-1]
+    y_true = y_true[order]
+    P = np.count_nonzero(y_true)
+    TP = np.cumsum(y_true, dtype=float)
+    PP = np.arange(1, len(y_true)+1, dtype=float)
+    recall = np.divide(TP, P)
+    precision = np.divide(TP, PP)
+    pr = np.trapz(precision, recall)
+    return pr
 
 
-def ml_split(y):
-    """Split annotations.
-    """
-    kf = KFold(n_splits=5, shuffle=True)
-    splits = []
-    for t_idx, v_idx in kf.split(y):
-        splits.append((t_idx, v_idx))
-    return splits
+def M_AUPR(y_true, y_score):
+    '''Macro-average AUPR.
 
-
-def evaluate_performance(y_test, y_score, y_pred):
-    """Evaluate performance.
-    """
-    n_classes = y_test.shape[1]
-    perf = dict()
-
-    # Compute macro-averaged AUPR
-    perf["M-aupr"] = 0.0
+    Computes AUPR independently for each class and returns the mean.
+    '''
+    AUC = 0.0
     n = 0
-    for i in range(n_classes):
-        perf[i], _ = real_AUPR(y_test[:, i], y_score[:, i])
-        if sum(y_test[:, i]) > 0:
+    for i in range(y_true.shape[1]):
+        AUC_i = AUPR(y_true[:, i], y_score[:, i])
+        if sum(y_true[:, i]) > 0:
             n += 1
-            perf["M-aupr"] += perf[i]
-    perf["M-aupr"] /= n
+            AUC += AUC_i
+    AUC /= n
+    return AUC
 
+
+def m_AUPR(y_true, y_score):
+    '''Micro-average AUPR.
+
+    Computes AUPR across all classes.
+    '''
+    AUC = AUPR(y_true, y_score)
+    return AUC
+
+
+def evaluate_performance(y_true, y_score, y_pred) -> dict:
+    '''Evaluate performance.
+    '''
+    perf = {}
+    # Compute macro-averaged AUPR
+    perf['M-aupr'] = M_AUPR(y_true, y_score)
     # Compute micro-averaged AUPR
-    perf["m-aupr"], _ = real_AUPR(y_test, y_score)
-
+    perf['m-aupr'] = m_AUPR(y_true, y_score)
     # Computes accuracy
-    perf['acc'] = accuracy_score(y_test, y_pred)
-
-    # Computes F1-score
-    alpha = 3
-    y_new_pred = np.zeros_like(y_pred)
-    for i in range(y_pred.shape[0]):
-        top_alpha = np.argsort(y_score[i, :])[-alpha:]
-        y_new_pred[i, top_alpha] = np.array(alpha*[1])
-    perf["F1"] = f1_score(y_test, y_new_pred, average='micro')
-
+    perf['acc'] = accuracy_score(y_true, y_pred)
+    # Compute F1-score
+    perf["F1"] = f1_score(y_true, y_pred, average='micro')
     return perf
 
 
-def cross_validation(X, y, n_trials=5, trial_splits=None, fname=None):
-    """Perform model selection via cross validation.
-    """
-    # filter samples with no annotations
+def cross_validation(X, y, n_trials=10, fname=None):
+    '''Perform model selection via cross validation.
+    '''
+    stdout('Number of samples pre-filtering', X.shape)
+
+    # Filter samples with no annotations
     del_rid = np.where(y.sum(axis=1) == 0)[0]
     y = np.delete(y, del_rid, axis=0)
     X = np.delete(X, del_rid, axis=0)
+    stdout('Number of samples post-filtering', X.shape)
 
-    # range of hyperparameters
-    C_range = 10.**np.arange(-1, 1)  # TODO replace with 10.**np.arange(-1, 3)
-    gamma_range = 10.**np.arange(-3, -1)  # TODO replace with 10.**np.arange(-3, 1)
-
-    # pre-generating kernels
-    print("### Pregenerating kernels...")
-    K_rbf = {}
-    for gamma in gamma_range:
-        K_rbf[gamma] = rbf_kernel(X, gamma=gamma)
-
-    # performance measures
-    perf = dict()
+    # Performance measures
+    perf = {}
     pr_micro = []
     pr_macro = []
     fmax = []
     acc = []
 
-    if trial_splits is None:
-        # shuffle and split training and test sets
-        trials = ShuffleSplit(n_splits=n_trials, test_size=0.2, random_state=None)
-        ss = trials.split(X)
-        trial_splits = []
-        for train_idx, test_idx in ss:
-            trial_splits.append((train_idx, test_idx))
+    # Hyperparameters
+    C = np.logspace(0, 1, 2)
+    gamma = np.logspace(-1, -0, 2)
 
-    it = 0
-    for jj in range(0, n_trials):
-        train_idx = trial_splits[jj][0]
-        test_idx = trial_splits[jj][1]
-        it += 1
+    grid_search_params = {
+        'estimator__C': C,
+        'estimator__gamma': gamma,
+        'estimator__kernel': ['rbf']}
+
+    # Scoring
+    scoring = {
+        'accuracy': 'accuracy',
+        'f1': 'f1_micro',
+        'M_AUPR': make_scorer(M_AUPR),
+        'm_AUPR': make_scorer(m_AUPR)}
+
+    # Classifier
+    clf = SVClassifier()
+
+    # Split training data
+    trials = ShuffleSplit(n_splits=n_trials,
+                          test_size=0.2,
+                          random_state=None)
+
+    # Model selection for optimum hyperparameters
+    iteration = 0
+    for train_idx, test_idx in trials.split(X):
+        # Split data
+        X_train = X[train_idx]
+        X_test = X[test_idx]
         y_train = y[train_idx]
         y_test = y[test_idx]
-        print("### [Trial %d] Perfom cross validation...." % (it))
-        print("Train samples=%d; #Test samples=%d" % (y_train.shape[0],
-                                                      y_test.shape[0]))
-        # setup for neasted cross-validation
-        splits = ml_split(y_train)
 
-        # parameter fitting
-        C_opt = None
-        gamma_opt = None
-        max_aupr = 0
-        for C in C_range:
-            for gamma in gamma_range:
-                # Multi-label classification
-                cv_results = []
-                for train, valid in splits:
-                    clf = OneVsRestClassifier(svm.SVC(C=C, kernel='precomputed',
-                                                      probability=False), n_jobs=-1)
-                    K_train = K_rbf[gamma][train_idx[train], :][:, train_idx[train]]
-                    K_valid = K_rbf[gamma][train_idx[valid], :][:, train_idx[train]]
-                    y_train_t = y_train[train]
-                    y_train_v = y_train[valid]
-                    y_score_valid = np.zeros(y_train_v.shape, dtype=float)
-                    y_pred_valid = np.zeros_like(y_train_v)
-                    idx = np.where(y_train_t.sum(axis=0) > 0)[0]
-                    clf.fit(K_train, y_train_t[:, idx])
-                    y_score_valid[:, idx] = clf.decision_function(K_valid)
-                    y_pred_valid[:, idx] = clf.predict(K_valid)
-                    perf_cv = evaluate_performance(y_train_v,
-                                                   y_score_valid,
-                                                   y_pred_valid)
-                    cv_results.append(perf_cv['m-aupr'])
-                cv_aupr = np.median(cv_results)
-                print("### gamma = %0.3f, C = %0.3f, AUPR = %0.3f" % (gamma, C, cv_aupr))
-                if cv_aupr > max_aupr:
-                    C_opt = C
-                    gamma_opt = gamma
-                    max_aupr = cv_aupr
-        print("### Optimal parameters: ")
-        print("C_opt = %0.3f, gamma_opt = %0.3f" % (C_opt, gamma_opt))
-        print("### Train dataset: AUPR = %0.3f" % (max_aupr))
-        print("### Using full training data...")
-        clf = OneVsRestClassifier(svm.SVC(C=C_opt, kernel='precomputed',
-                                          probability=False), n_jobs=-1)
-        y_score = np.zeros(y_test.shape, dtype=float)
-        y_pred = np.zeros_like(y_test)
-        idx = np.where(y_train.sum(axis=0) > 0)[0]
-        clf.fit(K_rbf[gamma_opt][train_idx, :][:, train_idx], y_train[:, idx])
+        iteration += 1
+        stdout('Cross validation trial', iteration)
+        stdout('Train samples', y_train.shape[0])
+        stdout('Test samples', y_test.shape[0])
+
+        # Perform a grid search over the hyperparameter ranges
+        clf.grid_search(
+            X_train,
+            y_train,
+            grid_search_params,
+            scoring=scoring,
+            refit='m_AUPR',
+            cv=2)  # TODO temp
+
+        # Get the best hyperparameters
+        clf_params = clf.get_clf().get_params()['estimator'] \
+                                  .get_params()['estimator'] \
+                                  .get_params()
+        best_params = {k: clf_params[k.replace('estimator__', '')]
+                       for k in grid_search_params}
+
+        stdout('Optimal parameters', best_params)
+        stdout('Train dataset AUPR', clf.clf_grid_search.best_score_)
+
+        # Train a classifier with the optimal hyperparameters using the full
+        # training data
+        clf.fit(X_train, y_train)
 
         # Compute performance on test set
-        y_score[:, idx] = clf.decision_function(K_rbf[gamma_opt][test_idx, :][:, train_idx])
-        y_pred[:, idx] = clf.predict(K_rbf[gamma_opt][test_idx, :][:, train_idx])
-        print("Number of positive predictions:", len(y_pred.nonzero()[0]))
+        y_pred = clf.predict(X_test)
+        y_score = clf.predict_proba(X_test)
+
+        stdout('Number of positive predictions', len(y_pred.nonzero()[0]))
+
         perf_trial = evaluate_performance(y_test, y_score, y_pred)
         pr_micro.append(perf_trial['m-aupr'])
         pr_macro.append(perf_trial['M-aupr'])
         fmax.append(perf_trial['F1'])
         acc.append(perf_trial['acc'])
-        print("### Test dataset: AUPR['micro'] = %0.3f, AUPR['macro'] = %0.3f, F1 = %0.3f, Acc = %0.3f" % (perf_trial['m-aupr'], perf_trial['M-aupr'], perf_trial['F1'], perf_trial['acc']))
+
+        stdout('Test dataset')
+        for measure, value in perf_trial.items():
+            if not isinstance(measure, int):
+                stdout(measure, value)
+
+    # Performance across K-fold cross-validation
     perf['m-aupr_avg'] = np.mean(pr_micro)
     perf['m-aupr_std'] = std(pr_micro)
     perf['M-aupr_avg'] = np.mean(pr_macro)
@@ -184,12 +167,4 @@ def cross_validation(X, y, n_trials=5, trial_splits=None, fname=None):
     perf['F1_std'] = std(fmax)
     perf['acc_avg'] = np.mean(acc)
     perf['acc_std'] = std(acc)
-
-    if fname is not None:
-        fout = open(fname, 'w')
-        fout.write("aupr[micro], aupr[macro], F_max, accuracy\n")
-        for ii in range(0, n_trials):
-            fout.write(f'{pr_micro[ii]}, {pr_macro[ii]}, {fmax[ii]}, {acc[ii]}')
-        fout.close()
-
     return perf
