@@ -47,7 +47,7 @@ n_trials = args.n_trials
 tags = args.tags
 validation = args.validation
 
-# # Validation type
+# Validation type
 validation_types = {
     'cv': ('P_3', 'P_2', 'P_1', 'F_3', 'F_2', 'F_1', 'C_3', 'C_2', 'C_1'),
     'cv2': ('P_1', 'P_2', 'P_3', 'F_1', 'F_2', 'F_3', 'C_1', 'C_2', 'C_3')}
