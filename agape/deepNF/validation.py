@@ -62,7 +62,7 @@ def evaluate_performance(y_true, y_score, y_pred) -> dict:
     return perf
 
 
-def cross_validation(X, y, n_trials=10, fname=None):
+def cross_validation(X, y, n_trials=10, fname=None, n_jobs=1):
     '''Perform model selection via cross validation.
     '''
     stdout('Number of samples pre-filtering', X.shape)
@@ -97,7 +97,7 @@ def cross_validation(X, y, n_trials=10, fname=None):
         'm_AUPR': make_scorer(m_AUPR)}
 
     # Classifier
-    clf = SVClassifier()
+    clf = SVClassifier(n_jobs=n_jobs)
 
     # Split training data
     trials = ShuffleSplit(n_splits=n_trials,

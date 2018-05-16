@@ -14,7 +14,7 @@ __all__ = ["SVClassifier", "RFClassifier"]
 class Classifier:
     '''Classifier base class.
     '''
-    def __init__(self, clf, scale=False):
+    def __init__(self, clf, scale=False, n_jobs=1):
         # A classifier is built using a `Pipeline` for convenience of chaining
         # multiple preprocessing steps before the classifier
         pipeline = []
@@ -24,6 +24,7 @@ class Classifier:
         # Add the `clf` estimator and build the `Pipeline`
         pipeline.append(('estimator', clf))
         self.clf = Pipeline(pipeline)
+        self.n_jobs = n_jobs
 
     def __name__(self):
         return self.__class__.__name__
@@ -47,7 +48,8 @@ class Classifier:
             self.grid_search_parameters,
             cv=cv,
             scoring=scoring,
-            refit=refit)
+            refit=refit,
+            n_jobs=self.n_jobs)
 
         self.clf_grid_search.fit(X, y)
         print('\n`clf.best_estimator_`:\n',
@@ -143,22 +145,22 @@ class Classifier:
 class SVClassifier(Classifier):
     '''Support Vector Classifier.
     '''
-    def __init__(self, random_state=None):
+    def __init__(self, random_state=None, n_jobs=1):
         super().__init__(
             OneVsRestClassifier(
                 SVC(probability=True,
                     random_state=random_state),
-                n_jobs=-1),
+                n_jobs=n_jobs),
             scale=True)
 
 
 class RFClassifier(Classifier):
     '''Random Forest Classifer.
     '''
-    def __init__(self, random_state=None):
+    def __init__(self, random_state=None, n_jobs=1):
         super().__init__(
             OneVsRestClassifier(
                 RandomForestClassifier(
-                    n_jobs=-1,
+                    n_jobs=n_jobs,
                     random_state=random_state),
-                n_jobs=-1))
+                n_jobs=n_jobs))

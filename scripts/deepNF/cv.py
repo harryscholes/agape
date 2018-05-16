@@ -13,9 +13,9 @@ from agape.utils import stdout, directory_exists
 import sklearn
 import warnings
 
-warnings.filterwarnings(
-    "ignore",
-    category=sklearn.exceptions.UndefinedMetricWarning)
+# warnings.filterwarnings(
+#     "ignore",
+#     category=sklearn.exceptions.UndefinedMetricWarning)
 
 print(__doc__)
 
@@ -33,6 +33,7 @@ parser.add_argument('-a', '--architecture', default="2", type=int)
 parser.add_argument('-n', '--n-trials', default=10, type=int)
 parser.add_argument('-v', '--validation', default='cv', type=str)
 parser.add_argument('--tags', default="", type=str)
+parser.add_argument('-j', '--n_jobs', default=1, type=int)
 args = parser.parse_args()
 
 stdout("Command line arguments", args)
@@ -46,6 +47,7 @@ architecture = args.architecture
 n_trials = args.n_trials
 tags = args.tags
 validation = args.validation
+n_jobs = args.n_jobs
 
 # Validation type
 validation_types = {
@@ -116,7 +118,8 @@ def main():
                     n_trials=n_trials,
                     fname=os.path.join(
                         results_path,
-                        f'{model_name}_{level}_{validation}_performance_trials.txt'))
+                        f'{model_name}_{level}_{validation}_performance_trials.txt'),
+                    n_jobs=n_jobs)
 
                 fout.write(f'\n{level}\n')
 
