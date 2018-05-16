@@ -10,6 +10,12 @@ import scipy.io as sio
 from agape.deepNF.validation import cross_validation
 from agape.deepNF.utils import load_embeddings, mkdir
 from agape.utils import stdout, directory_exists
+import sklearn
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    category=sklearn.exceptions.UndefinedMetricWarning)
 
 print(__doc__)
 
