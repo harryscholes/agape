@@ -119,6 +119,9 @@ def cross_validation(X, y, n_trials=10, fname=None, n_jobs=1):
         stdout('Test samples', y_test.shape[0])
 
         # Perform a grid search over the hyperparameter ranges
+
+        stdout('Grid search')
+        
         clf.grid_search(
             X_train,
             y_train,
