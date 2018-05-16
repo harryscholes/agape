@@ -15,11 +15,13 @@ class Classifier:
     '''Classifier base class.
     '''
     def __init__(self, clf, scale=False):
+        # A classifier is built using a `Pipeline` for convenience of chaining
+        # multiple preprocessing steps before the classifier
         pipeline = []
-
+        # Centre data by scaling to zero mean and unit variance
         if scale is True:
             pipeline.append(('standard_scaler', StandardScaler()))
-
+        # Add the `clf` estimator and build the `Pipeline`
         pipeline.append(('estimator', clf))
         self.clf = Pipeline(pipeline)
 
@@ -27,6 +29,15 @@ class Classifier:
         return self.__class__.__name__
 
     def grid_search(self, X, y, parameters, scoring=None, cv=5, refit=True):
+        '''Perform an exhaustive search over hyperparameter combinations.
+
+        # Arguments
+            X: np.ndarray, features
+            y: np.ndarray, labels
+            parameters: dict, hyperparameter ranges
+            scoring: dict, scoring functions e.g. {'acc': accuracy_score, ...}
+            refit: bool, fit an estimator with the best parameters if True
+        '''
         self.grid_search_parameters = {'estimator__' + k: v for k, v
                                        in parameters.items()}
         clf = self.clf
@@ -43,6 +54,12 @@ class Classifier:
               self.clf_grid_search.best_estimator_, '\n', sep='')
 
     def fit(self, X, y):
+        '''Fit the estimator.
+
+        # Arguments
+            X: np.ndarray, features
+            y: np.ndarray, labels
+        '''
         # Fit classifier using the best parameters from GridSearchCV
         try:
             getattr(self.clf_grid_search, 'best_estimator_')
@@ -55,20 +72,53 @@ class Classifier:
             print(f'\nFit using `{fit_using}`')
 
     def get_clf(self):
+        '''Get the best estimator.
+
+        If a grid search has been performed, then the `best_estimator_` is
+        returned, else the estimator used to initialise the object is returned.
+
+        # Returns
+            clf: sklearn estimator
+        '''
         try:
             return self.clf_grid_search.best_estimator_
         except AttributeError:
             return self.clf
 
     def predict(self, X):
+        '''Predict the classes of samples using features.
+
+        # Arguments
+            X: np.ndarray, features
+
+        # Returns
+            predictions: np.ndarray, class predictions
+        '''
         self.predictions = self.get_clf().predict(X)
         return self.predictions
 
     def predict_proba(self, X):
+        '''Predict the class-membership probabilities of samples.
+
+        # Arguments
+            X: np.ndarray, features
+
+        # Returns
+            probabilities: np.ndarray, class probabilities
+        '''
         self.probabilities = self.get_clf().predict_proba(X)
         return self.probabilities
 
     def decision_function(self, X):
+        '''Decision function.
+
+        # Arguments
+            X: np.ndarray, features
+
+        # Returns
+            decisions: np.ndarray, distances of samples to the decision
+                boundary
+        '''
         try:
             self.decisions = self.get_clf().decision_function(X)
             return self.decisions
@@ -77,8 +127,16 @@ class Classifier:
                 f'decision_function is not implemented for {self.__name__()}')\
                 from None
 
-    def accuracy(self, y):
-        self.accuracy_score = accuracy_score(y, self.predictions)
+    def accuracy(self, y_true):
+        '''Accuracy score.
+
+        # Arguments
+            y_true: np.ndarry, true labels
+
+        # Returns
+            accuracy_score: float
+        '''
+        self.accuracy_score = accuracy_score(y_true, self.predictions)
         return self.accuracy_score
 
 
