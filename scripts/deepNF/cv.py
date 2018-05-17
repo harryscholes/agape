@@ -10,8 +10,8 @@ import scipy.io as sio
 from agape.deepNF.validation import cross_validation
 from agape.deepNF.utils import load_embeddings, mkdir
 from agape.utils import stdout, directory_exists
-import sklearn
-import warnings
+# import sklearn
+# import warnings
 
 # warnings.filterwarnings(
 #     "ignore",
@@ -32,6 +32,10 @@ parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
 parser.add_argument('-a', '--architecture', default="2", type=int)
 parser.add_argument('-n', '--n-trials', default=10, type=int)
 parser.add_argument('-v', '--validation', default='cv', type=str)
+parser.add_argument('-s', '--random_state', default=-1, type=int,
+                    help='Set sklearn random_state. If -1, then sklearn uses \
+                          the system randomness as a seed. If int, then this \
+                          number will be used as a seed.')
 parser.add_argument('--tags', default="", type=str)
 parser.add_argument('-j', '--n_jobs', default=1, type=int)
 args = parser.parse_args()
@@ -48,6 +52,17 @@ n_trials = args.n_trials
 tags = args.tags
 validation = args.validation
 n_jobs = args.n_jobs
+random_state = args.random_state
+
+
+# Set random_state seed for sklearn
+if random_state == -1:
+    random_state = None  # Seed randomness with system randomness
+elif random_state > 0:
+    pass  # Seed randomness with random_state
+else:
+    raise ValueError('--random_state must be -1 or > 0')
+
 
 # Validation type
 validation_types = {
@@ -119,7 +134,8 @@ def main():
                     fname=os.path.join(
                         results_path,
                         f'{model_name}_{level}_{validation}_performance_trials.txt'),
-                    n_jobs=n_jobs)
+                    n_jobs=n_jobs,
+                    random_state=random_state)
 
                 fout.write(f'\n{level}\n')
 
