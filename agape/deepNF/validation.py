@@ -4,6 +4,7 @@ from sklearn.model_selection import ShuffleSplit
 from scipy.stats import sem as std
 from agape.ml.classifier import SVClassifier
 from agape.utils import stdout
+from collections import defaultdict
 
 
 def AUPR(y_true, y_score):
@@ -52,17 +53,17 @@ def evaluate_performance(y_true, y_score, y_pred) -> dict:
     '''
     perf = {}
     # Compute macro-averaged AUPR
-    perf['M-aupr'] = M_AUPR(y_true, y_score)
+    perf['M_AUPR'] = M_AUPR(y_true, y_score)
     # Compute micro-averaged AUPR
-    perf['m-aupr'] = m_AUPR(y_true, y_score)
+    perf['m_AUPR'] = m_AUPR(y_true, y_score)
     # Computes accuracy
-    perf['acc'] = accuracy_score(y_true, y_pred)
+    perf['accuracy'] = accuracy_score(y_true, y_pred)
     # Compute F1-score
-    perf["F1"] = f1_score(y_true, y_pred, average='micro')
+    perf["f1"] = f1_score(y_true, y_pred, average='micro')
     return perf
 
 
-def cross_validation(X, y, n_trials=10, fname=None, n_jobs=1,
+def cross_validation(X, y, n_trials=10, n_jobs=1,
                      random_state=None):
     '''Perform model selection via cross validation.
     '''
@@ -73,13 +74,6 @@ def cross_validation(X, y, n_trials=10, fname=None, n_jobs=1,
     y = np.delete(y, del_rid, axis=0)
     X = np.delete(X, del_rid, axis=0)
     stdout('Number of samples post-filtering', X.shape)
-
-    # Performance measures
-    perf = {}
-    pr_micro = []
-    pr_macro = []
-    fmax = []
-    acc = []
 
     # Hyperparameters
     C = np.logspace(0, 1, 2)
@@ -103,7 +97,12 @@ def cross_validation(X, y, n_trials=10, fname=None, n_jobs=1,
     # Split training data
     trials = ShuffleSplit(n_splits=n_trials,
                           test_size=0.2,
-                          random_state=None)
+                          random_state=random_state)
+
+    # Performance
+    performance_metrics = ("accuracy", "m_AUPR", "M_AUPR", "f1")
+    perf = defaultdict(dict)
+    perf['grid_search'] = {}
 
     # Model selection for optimum hyperparameters
     iteration = 0
@@ -138,8 +137,20 @@ def cross_validation(X, y, n_trials=10, fname=None, n_jobs=1,
         best_params = {k: clf_params[k.replace('estimator__', '')]
                        for k in grid_search_params}
 
+        perf['grid_search'][iteration] = {}
+        perf['grid_search'][iteration]['best_estimator_'] = {}
+
+        for k, v in best_params.items():
+            k = k.split('__')[-1]
+            perf['grid_search'][iteration]['best_estimator_'][k] = v
+
         stdout('Optimal parameters', best_params)
+
+        perf['grid_search'][iteration]['best_score_'] = \
+            clf.clf_grid_search.best_score_
+
         stdout('Train dataset AUPR', clf.clf_grid_search.best_score_)
+
 
         # Train a classifier with the optimal hyperparameters using the full
         # training data
@@ -152,23 +163,25 @@ def cross_validation(X, y, n_trials=10, fname=None, n_jobs=1,
         stdout('Number of positive predictions', len(y_pred.nonzero()[0]))
 
         perf_trial = evaluate_performance(y_test, y_score, y_pred)
-        pr_micro.append(perf_trial['m-aupr'])
-        pr_macro.append(perf_trial['M-aupr'])
-        fmax.append(perf_trial['F1'])
-        acc.append(perf_trial['acc'])
+
+        for pm in performance_metrics:
+            perf[pm][iteration] = perf_trial[pm]
 
         stdout('Test dataset')
+
         for measure, value in perf_trial.items():
             if not isinstance(measure, int):
                 stdout(measure, value)
 
     # Performance across K-fold cross-validation
-    perf['m-aupr_avg'] = np.mean(pr_micro)
-    perf['m-aupr_std'] = std(pr_micro)
-    perf['M-aupr_avg'] = np.mean(pr_macro)
-    perf['M-aupr_std'] = std(pr_macro)
-    perf['F1_avg'] = np.mean(fmax)
-    perf['F1_std'] = std(fmax)
-    perf['acc_avg'] = np.mean(acc)
-    perf['acc_std'] = std(acc)
+
+    def calculate_mean_std(metric):
+        values = list(perf[metric].values())
+        perf['metrics'][metric]['mean'] = np.mean(values)
+        perf['metrics'][metric]['std'] = std(values)
+
+    for pm in performance_metrics:
+        perf['metrics'][pm] = {}
+        calculate_mean_std(pm)
+
     return perf
