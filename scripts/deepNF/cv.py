@@ -6,6 +6,8 @@ Usage:
 '''
 import os
 import argparse
+import json
+from pprint import pprint
 import scipy.io as sio
 from agape.deepNF.validation import cross_validation
 from agape.deepNF.utils import load_embeddings, mkdir
@@ -24,13 +26,15 @@ print(__doc__)
 ##########################
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-g', '--gene-ontology', type=str, required=True)
+parser.add_argument('-l', '--level', type=int, required=True)
 parser.add_argument('-o', '--organism', default='yeast', type=str)
 parser.add_argument('-t', '--model-type', default='mda', type=str)
 parser.add_argument('-m', '--models-path', default="models", type=str)
 parser.add_argument('-r', '--results-path', default="results", type=str)
 parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
-parser.add_argument('-a', '--architecture', default="2", type=int)
-parser.add_argument('-n', '--n-trials', default=10, type=int)
+parser.add_argument('-a', '--architecture', default=2, type=int)
+parser.add_argument('-n', '--n-trials', default=5, type=int)
 parser.add_argument('-v', '--validation', default='cv', type=str)
 parser.add_argument('-s', '--random_state', default=-1, type=int,
                     help='Set sklearn random_state. If -1, then sklearn uses \
@@ -53,6 +57,8 @@ tags = args.tags
 validation = args.validation
 n_jobs = args.n_jobs
 random_state = args.random_state
+level = args.level
+gene_ontology = args.gene_ontology
 
 
 # Set random_state seed for sklearn
@@ -66,13 +72,24 @@ else:
 
 # Validation type
 validation_types = {
-    'cv': ('P_3', 'P_2', 'P_1', 'F_3', 'F_2', 'F_1', 'C_3', 'C_2', 'C_1'),
-    'cv2': ('P_1', 'P_2', 'P_3', 'F_1', 'F_2', 'F_3', 'C_1', 'C_2', 'C_3')}
+    'cv': ('P_3', 'P_2', 'P_1', 'F_3', 'F_2', 'F_1', 'C_3', 'C_2', 'C_1')}
 
 try:
     annotation_types = validation_types[validation]
 except KeyError as err:
     err.args = (f'Not a valid validation type: {validation}',)
+
+
+# Ontology
+if gene_ontology not in {'P', 'F', 'C'}:
+    raise ValueError('--gene-ontology must be P, F or C')
+
+
+# Level
+if level not in {1, 2, 3}:
+    raise ValueError('--level must be 1, 2 or 3')
+
+level = f'{gene_ontology}_{level}'
 
 
 # Performance measures
@@ -119,29 +136,22 @@ def main():
     # Train classifier #
     ####################
 
-    results_summary_file = os.path.join(
-        results_path,
-        f'{model_name}_{validation}_performance.txt')
+    if validation == 'cv':
+        stdout('Running cross-validation for', level)
 
-    with open(results_summary_file, 'w') as fout:
-        for level in annotation_types:
-            stdout('Running for level', level)
-            if validation == 'cv':
-                perf = cross_validation(
-                    embeddings,
-                    GO[level],
-                    n_trials=n_trials,
-                    fname=os.path.join(
-                        results_path,
-                        f'{model_name}_{level}_{validation}_performance_trials.txt'),
-                    n_jobs=n_jobs,
-                    random_state=random_state)
+        performance = cross_validation(
+            embeddings,
+            GO[level],
+            n_trials=n_trials,
+            n_jobs=n_jobs,
+            random_state=random_state)
 
-                fout.write(f'\n{level}\n')
+        pprint(performance)
 
-                for m in measures:
-                    fout.write(f'{m} {perf[m]:.5f}\n')
-                fout.write('\n')
+        fout = f'{model_name}_{level}_{validation}_performance.json'
+
+        with open(os.path.join(results_path, fout), 'w') as f:
+            json.dump(performance, f)
 
 
 if __name__ == '__main__':
