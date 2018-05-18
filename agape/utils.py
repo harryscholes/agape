@@ -22,20 +22,26 @@ def directory_exists(p):
     return p
 
 
-def stdout(string, object=None):
+def stdout(string, object=None, file=None):
     '''Pretty(ish) print a string (and object) to STDOUT.
 
     # Arguments
         string: str, if `object` is provided, `string` typically describes this
         object: object, any object
+        file: stream, if None, prints to STDOUT
 
     >>> p = "Earth"
     >>> stdout("Planet", p)
     Planet:
         Earth
     <BLANKLINE>
+    >>> from io import StringIO
+    >>> f = StringIO()
+    >>> stdout("a", file=f)
+    >>> f.getvalue()
+    'a\\n\\n\\n'
     '''
     if string and object:
-        print(f'{string}:\n    ', object, '\n', sep='')
+        print(f'{string}:\n    ', object, '\n', sep='', file=file)
     elif string:
-        print(f'{string}\n\n')
+        print(f'{string}\n\n', file=file)
