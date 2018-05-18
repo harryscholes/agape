@@ -2,16 +2,19 @@
 """
 import os
 import pandas as pd
+from .base import Base
 
 __all__ = ["Genes", "Biogrid", "STRING"]
 
 data = os.environ["AGAPEDATA"]
 
 
-class Genes(object):
+class Genes(Base):
     """Load S. pombe gene IDs.
     """
     def __init__(self):
+        super().__init__()
+        
         df = pd.read_csv(os.path.join(data,
                                       "schizosaccharomyces_pombe.genome.gff3"),
                          skiprows=6,
@@ -48,10 +51,12 @@ class Genes(object):
         return list(df.GeneID)
 
 
-class Biogrid:
+class Biogrid(Base):
     """Load S. pombe BioGRID database.
     """
     def __init__(self):
+        super().__init__()
+
         f = "BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.158.tab2.txt"
         df = pd.read_csv(os.path.join(data, f), sep="\t")
         df = df[(df["Organism Interactor A"] == 284812) &
@@ -90,10 +95,12 @@ class Biogrid:
         return df
 
 
-class STRING:
+class STRING(Base):
     """Load S. pombe STRING database.
     """
     def __init__(self):
+        super().__init__()
+
         f = "4896.protein.links.detailed.v10.5.txt"
         self.df = pd.read_csv(os.path.join(data, f), sep=" ")
         self.interaction_types = (

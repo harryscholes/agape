@@ -8,6 +8,7 @@ from goatools.associations import read_gaf
 from collections import defaultdict
 from .exceptions import GeneOntologyError
 import copy
+from .base import Base
 
 __all__ = ["GO", "prettify"]
 
@@ -35,13 +36,15 @@ def go_annotations(filepath: str):
         raise
 
 
-class GO:
+class GO(Base):
     """Handles S. pombe gene ontology annotations.
 
     # Arguments
         args: str, sets of GO evidence codes to be included
     """
     def __init__(self, *allowed_evidence_codes):
+        super().__init__()
+
         self.set_evidence_codes()
         self.set_allowed_evidence_codes(allowed_evidence_codes)
 
