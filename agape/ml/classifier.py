@@ -7,14 +7,17 @@ from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
+from ..base import Base
 
 __all__ = ["SVClassifier", "RFClassifier"]
 
 
-class Classifier:
+class Classifier(Base):
     '''Classifier base class.
     '''
     def __init__(self, clf, scale=False, n_jobs=1):
+        super().__init__()
+
         # A classifier is built using a `Pipeline` for convenience of chaining
         # multiple preprocessing steps before the classifier
         pipeline = []
