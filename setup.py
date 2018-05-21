@@ -37,7 +37,8 @@ setup(
         'biopython>=1.70',
         'goatools>=0.8',
         'matplotlib>=2.2.0',
-        'keras>=2.1.5'],
+        'keras>=2.1.5',
+        'tensorflow>=1.7.0'],
     tests_require=test_deps,
     setup_requires=[
         'pytest-runner'],
