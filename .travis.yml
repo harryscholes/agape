@@ -4,9 +4,7 @@ python:
   - 3.6
 
 env:
-  global:
-    - REPO=$(basename $TRAVIS_REPO_SLUG)
-    - AGAPEDATA=$HOME/cache
+  global: AGAPEDATA=$HOME/cache
 
 cache:
   pip: true
