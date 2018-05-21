@@ -28,6 +28,11 @@ def M_AUPR(y_true, y_score):
 
     Computes AUPR independently for each class and returns the mean.
     '''
+    for v in (y_true, y_score):
+        s = len(v.shape)
+        if not s == 2:
+            raise ValueError(f'Shape of array is {s}, not 2')
+
     AUC = 0.0
     n = 0
     for i in range(y_true.shape[1]):
@@ -48,19 +53,16 @@ def m_AUPR(y_true, y_score):
     return AUC
 
 
-def evaluate_performance(y_true, y_score, y_pred) -> dict:
-    '''Evaluate performance.
-    '''
-    perf = {}
-    # Compute macro-averaged AUPR
-    perf['M_AUPR'] = M_AUPR(y_true, y_score)
-    # Compute micro-averaged AUPR
-    perf['m_AUPR'] = m_AUPR(y_true, y_score)
-    # Computes accuracy
-    perf['accuracy'] = accuracy_score(y_true, y_pred)
-    # Compute F1-score
-    perf["f1"] = f1_score(y_true, y_pred, average='micro')
-    return perf
+class _Performance:
+    def __init__(self, y_true, y_score, y_pred):
+        # Compute macro-averaged AUPR
+        self.M_AUPR = M_AUPR(y_true, y_score)
+        # Compute micro-averaged AUPR
+        self.m_AUPR = m_AUPR(y_true, y_score)
+        # Computes accuracy
+        self.accuracy = accuracy_score(y_true, y_pred)
+        # Compute F1-score
+        self.f1 = f1_score(y_true, y_pred, average='micro')
 
 
 def cross_validation(X, y, n_trials=10, n_jobs=1,
@@ -162,16 +164,14 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
 
         stdout('Number of positive predictions', len(y_pred.nonzero()[0]))
 
-        perf_trial = evaluate_performance(y_test, y_score, y_pred)
-
-        for pm in performance_metrics:
-            perf[pm][iteration] = perf_trial[pm]
+        perf_trial = _Performance(y_test, y_score, y_pred)
 
         stdout('Test dataset')
 
-        for measure, value in perf_trial.items():
-            if not isinstance(measure, int):
-                stdout(measure, value)
+        for pm in performance_metrics:
+            pm_v = getattr(perf_trial, pm)
+            stdout(pm, pm_v)
+            perf[pm][iteration] = pm_v
 
     # Performance across K-fold cross-validation
 
