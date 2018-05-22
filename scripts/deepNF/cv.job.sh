@@ -18,7 +18,7 @@ current_time () {
     $(eval echo 'date +%H:%M:%S')
 }
 
-if [ $SGE_TASK_ID = 'undefined' ]; then
+if [[ $SGE_TASK_ID = 'undefined' ]]; then
     sge_task_label=''
 else
     sge_task_label=_$SGE_TASK_ID
@@ -114,12 +114,16 @@ $python -u $code \
     -r results/180510_fda4344 \
     -n 5 \
     -j 4 \
-    -s 1
+    -s 1 \
+    && CODE_DONE=true  # Set variable to `true` if code ran successfully
 
-echo CODE_DONE $(current_time)
-
-# Save output
-tar zcvf $results_path/${date}_${JOB_NAME}_${JOB_ID}${sge_task_label}.tar.gz $output_dir
+if [[ $CODE_DONE = true ]]; then
+    # If code ran successfully, tar up the output
+    echo CODE_DONE $(current_time)
+    tar zcvf $results_path/${date}_${JOB_NAME}_${JOB_ID}${sge_task_label}.tar.gz $output_dir
+else
+    echo ERROR $(current_time)
+fi
 
 qstat -j $JOB_ID
 
