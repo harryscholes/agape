@@ -14,7 +14,9 @@
 #########
 
 date=$(date +%Y-%m-%d)
-current_time='date +%H:%M:%S'
+current_time () {
+    $(eval echo 'date +%H:%M:%S')
+}
 
 if [ $SGE_TASK_ID = 'undefined' ]; then
     sge_task_label=''
@@ -85,7 +87,7 @@ echo
 # Job details #
 ###############
 
-echo STARTED $current_time
+echo STARTED $(current_time)
 
 # Setup environment
 if [[ $conda_env != '' ]]; then
@@ -102,7 +104,7 @@ export JOBLIB_START_METHOD='forkserver'
 echo JOBLIB_START_METHOD $JOBLIB_START_METHOD
 
 # Run code
-echo CODE_STARTED $(eval $current_time)
+echo CODE_STARTED $(current_time)
 
 $python -u $code \
     -a $1 \
@@ -114,9 +116,9 @@ $python -u $code \
     -j 4 \
     -s 1
 
-echo CODE_DONE $current_time
+echo CODE_DONE $(current_time)
 
 # Save output
 tar zcvf $results_path/${date}_${JOB_NAME}_${JOB_ID}${sge_task_label}.tar.gz $output_dir
 
-echo DONE $(eval $current_time)
+echo DONE $(current_time)
