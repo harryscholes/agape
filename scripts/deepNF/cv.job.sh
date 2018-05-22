@@ -121,4 +121,6 @@ echo CODE_DONE $(current_time)
 # Save output
 tar zcvf $results_path/${date}_${JOB_NAME}_${JOB_ID}${sge_task_label}.tar.gz $output_dir
 
+qstat -j $JOB_ID
+
 echo DONE $(current_time)
