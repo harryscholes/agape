@@ -160,10 +160,10 @@ if __name__ == "__main__":
     print(f"Command line arguments:\n    {args}\n")
 
     # Load STRING networks
-    string_nets = ['neighborhood', 'fusion',       'cooccurence',
-                   'coexpression', 'experimental', 'database']
+    string_nets = sorted(['neighborhood', 'fusion',       'cooccurence',
+                          'coexpression', 'experimental', 'database'])
 
-    filenames = glob.glob(os.path.join(input_path, "*adjacency.txt"))
+    filenames = sorted(glob.glob(os.path.join(input_path, "*adjacency.txt")))
 
     print(filenames)
 
@@ -173,8 +173,8 @@ if __name__ == "__main__":
     output_basename = os.path.basename(filenames[0]).split("_")[0]
 
     # Compute RWR + PPMI
-    for i in range(1, len(Nets) + 1):
-        print(f"Computing PPMI for network {string_nets[i]}")
+    for i, f in zip(range(len(Nets)), filenames):
+        print(f"Computing PPMI for network {f}")
         net = Nets[i]
         net = RWR(net)
         net = PPMI_matrix(net)
