@@ -26,8 +26,7 @@ print(__doc__)
 ##########################
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-g', '--gene-ontology', type=str, required=True)
-parser.add_argument('-l', '--level', type=int, required=True)
+parser.add_argument('-l', '--level', required=True)
 parser.add_argument('-o', '--organism', default='yeast', type=str)
 parser.add_argument('-t', '--model-type', default='mda', type=str)
 parser.add_argument('-m', '--models-path', default="models", type=str)
@@ -72,24 +71,16 @@ else:
 
 # Validation type
 validation_types = {
-    'cv': ('P_3', 'P_2', 'P_1', 'F_3', 'F_2', 'F_1', 'C_3', 'C_2', 'C_1')}
+    'cv': ('P_3', 'P_2', 'P_1', 'F_3', 'F_2', 'F_1', 'C_3', 'C_2', 'C_1'),
+    'cerevisiae': ('level1', 'level2', 'level3')}
 
 try:
     annotation_types = validation_types[validation]
 except KeyError as err:
     err.args = (f'Not a valid validation type: {validation}',)
 
-
-# Ontology
-if gene_ontology not in {'P', 'F', 'C'}:
-    raise ValueError('--gene-ontology must be P, F or C')
-
-
-# Level
-if level not in {1, 2, 3}:
-    raise ValueError('--level must be 1, 2 or 3')
-
-level = f'{gene_ontology}_{level}'
+if level not in annotation_types:
+    raise ValueError(f'Level must be one of:', annotation_types)
 
 
 # Performance measures
@@ -123,35 +114,31 @@ def main():
     # Load GO annotations #
     #######################
 
-    if validation == 'cv':
-        annotation_dir = os.path.join(
-            os.path.expandvars('$AGAPEDATA'), 'annotations')
-        annotation_file = 'yeast_annotations.mat'
-        stdout('Loading GO annotations')
+    annotation_dir = os.path.join(data_path, 'annotations')
+    annotation_file = os.path.join(annotation_dir, 'yeast_annotations.mat')
+    stdout('Loading GO annotations', annotation_file)
 
-        GO = sio.loadmat(
-            os.path.join(annotation_dir, annotation_file))
+    GO = sio.loadmat(annotation_file)
 
     ####################
     # Train classifier #
     ####################
 
-    if validation == 'cv':
-        stdout('Running cross-validation for', level)
+    stdout('Running cross-validation for', level)
 
-        performance = cross_validation(
-            embeddings,
-            GO[level],
-            n_trials=n_trials,
-            n_jobs=n_jobs,
-            random_state=random_state)
+    performance = cross_validation(
+        embeddings,
+        GO[level],
+        n_trials=n_trials,
+        n_jobs=n_jobs,
+        random_state=random_state)
 
-        pprint(performance)
+    pprint(performance)
 
-        fout = f'{model_name}_{level}_{validation}_performance.json'
+    fout = f'{model_name}_{level}_{validation}_performance.json'
 
-        with open(os.path.join(results_path, fout), 'w') as f:
-            json.dump(performance, f)
+    with open(os.path.join(results_path, fout), 'w') as f:
+        json.dump(performance, f)
 
 
 if __name__ == '__main__':
