@@ -82,9 +82,10 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
     gamma = np.logspace(-1, -0, 2)
 
     grid_search_params = {
-        'estimator__C': C,
-        'estimator__gamma': gamma,
-        'estimator__kernel': ['rbf']}
+        'estimator__C': [1],  #C,
+        # 'estimator__gamma': gamma,
+        'estimator__kernel': ['linear'],  #['rbf']
+        }
 
     # Scoring
     scoring = {
@@ -130,7 +131,7 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
             grid_search_params,
             scoring=scoring,
             refit='m_AUPR',
-            cv=2)  # TODO temp
+            cv=5)
 
         # Get the best hyperparameters
         clf_params = clf.get_clf().get_params()['estimator'] \
