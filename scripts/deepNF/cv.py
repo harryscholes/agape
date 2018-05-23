@@ -57,7 +57,6 @@ validation = args.validation
 n_jobs = args.n_jobs
 random_state = args.random_state
 level = args.level
-gene_ontology = args.gene_ontology
 
 
 # Set random_state seed for sklearn
