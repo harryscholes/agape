@@ -78,14 +78,13 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
     stdout('Number of samples post-filtering', X.shape)
 
     # Hyperparameters
-    C = np.logspace(0, 1, 2)
-    gamma = np.logspace(-1, -0, 2)
+    C = np.logspace(-1, 2, 4)
+    gamma = np.logspace(-3, 0, 4)
 
     grid_search_params = {
-        'estimator__C': [1],  #C,
-        # 'estimator__gamma': gamma,
-        'estimator__kernel': ['linear'],  #['rbf']
-        }
+        'estimator__C': C,
+        'estimator__gamma': gamma,
+        'estimator__kernel': ['rbf']}
 
     # Scoring
     scoring = {
