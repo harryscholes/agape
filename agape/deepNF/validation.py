@@ -131,7 +131,8 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
             grid_search_params,
             scoring=scoring,
             refit='m_AUPR',
-            cv=5)
+            cv=5,
+            verbose=10)
 
         # Get the best hyperparameters
         clf_params = clf.get_clf().get_params()['estimator'] \
