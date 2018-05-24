@@ -157,7 +157,8 @@ class SVClassifier(Classifier):
                 SVC(probability=True,
                     random_state=random_state),
                 n_jobs=n_jobs),
-            scale=True)
+            scale=True,
+            n_jobs=n_jobs)
 
 
 class RFClassifier(Classifier):
@@ -169,4 +170,5 @@ class RFClassifier(Classifier):
                 RandomForestClassifier(
                     n_jobs=n_jobs,
                     random_state=random_state),
-                n_jobs=n_jobs))
+                n_jobs=n_jobs),
+            n_jobs=n_jobs)
