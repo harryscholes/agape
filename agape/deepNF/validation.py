@@ -94,9 +94,6 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
         'M_AUPR': make_scorer(M_AUPR),
         'm_AUPR': make_scorer(m_AUPR)}
 
-    # Classifier
-    clf = SVClassifier(n_jobs=n_jobs, random_state=random_state)
-
     # Split training data
     trials = ShuffleSplit(n_splits=n_trials,
                           test_size=0.2,
@@ -124,6 +121,9 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
         # Perform a grid search over the hyperparameter ranges
 
         stdout('Grid search')
+
+        # Classifier
+        clf = SVClassifier(n_jobs=n_jobs, random_state=random_state)
 
         clf.grid_search(
             X_train,
@@ -153,7 +153,6 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
             clf.clf_grid_search.best_score_
 
         stdout('Train dataset AUPR', clf.clf_grid_search.best_score_)
-
 
         # Train a classifier with the optimal hyperparameters using the full
         # training data
