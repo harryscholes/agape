@@ -12,12 +12,8 @@ import scipy.io as sio
 from agape.deepNF.validation import cross_validation
 from agape.deepNF.utils import load_embeddings, mkdir
 from agape.utils import stdout, directory_exists
-# import sklearn
-# import warnings
-
-# warnings.filterwarnings(
-#     "ignore",
-#     category=sklearn.exceptions.UndefinedMetricWarning)
+import sklearn
+import warnings
 
 print(__doc__)
 
@@ -41,6 +37,8 @@ parser.add_argument('-s', '--random_state', default=-1, type=int,
                           number will be used as a seed.')
 parser.add_argument('--tags', default="", type=str)
 parser.add_argument('-j', '--n_jobs', default=1, type=int)
+parser.add_argument('--test', default=None, type=int,
+                    help='If True, then only a subset of the data is used')
 args = parser.parse_args()
 
 stdout("Command line arguments", args)
@@ -57,6 +55,7 @@ validation = args.validation
 n_jobs = args.n_jobs
 random_state = args.random_state
 level = args.level
+test = args.test
 
 
 # Set random_state seed for sklearn
@@ -125,9 +124,22 @@ def main():
 
     stdout('Running cross-validation for', level)
 
+    annotations = GO[level]
+
+    # Only use a subset of the data for testing purposes
+    if test is not None:
+        for w in (sklearn.exceptions.UndefinedMetricWarning,
+                  UserWarning, RuntimeWarning):
+            warnings.filterwarnings(
+                "ignore",
+                category=w)
+
+        embeddings = embeddings[:test]
+        annotations = annotations[:test]
+
     performance = cross_validation(
         embeddings,
-        GO[level],
+        annotations,
         n_trials=n_trials,
         n_jobs=n_jobs,
         random_state=random_state)
