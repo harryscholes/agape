@@ -32,7 +32,8 @@ class Classifier(Base):
     def __name__(self):
         return self.__class__.__name__
 
-    def grid_search(self, X, y, parameters, scoring=None, cv=5, refit=True):
+    def grid_search(self, X, y, parameters, scoring=None, cv=5, refit=True,
+                    verbose=False):
         '''Perform an exhaustive search over hyperparameter combinations.
 
         # Arguments
@@ -41,6 +42,7 @@ class Classifier(Base):
             parameters: dict, hyperparameter ranges
             scoring: dict, scoring functions e.g. {'acc': accuracy_score, ...}
             refit: bool, fit an estimator with the best parameters if True
+            verbose: int, controls the verbosity: the higher, the more messages
         '''
         self.grid_search_parameters = {'estimator__' + k: v for k, v
                                        in parameters.items()}
@@ -52,7 +54,8 @@ class Classifier(Base):
             cv=cv,
             scoring=scoring,
             refit=refit,
-            n_jobs=self.n_jobs)
+            n_jobs=self.n_jobs,
+            verbose=verbose)
 
         self.clf_grid_search.fit(X, y)
         print('\n`clf.best_estimator_`:\n',
