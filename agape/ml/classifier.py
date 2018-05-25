@@ -11,7 +11,7 @@ from dask_searchcv import GridSearchCV
 import warnings
 from ..base import Base
 
-__all__ = ["SVClassifier", "RFClassifier"]
+__all__ = ["SVClassifier", "RFClassifier", "LRClassifier"]
 
 
 class Classifier(Base):
@@ -175,4 +175,18 @@ class RFClassifier(Classifier):
                     n_jobs=n_jobs,
                     random_state=random_state),
                 n_jobs=n_jobs),
+            n_jobs=n_jobs)
+
+
+class LRClassifier(Classifier):
+    '''Linear Regression Classifer.
+    '''
+    def __init__(self, random_state=None, n_jobs=1):
+        super().__init__(
+            OneVsRestClassifier(
+                LogisticRegression(
+                    penalty='l2',
+                    random_state=random_state),
+                n_jobs=n_jobs),
+            scale=True,
             n_jobs=n_jobs)
