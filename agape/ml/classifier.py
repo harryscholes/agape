@@ -46,7 +46,7 @@ class Classifier(Base):
             refit: bool, fit an estimator with the best parameters if True
             verbose: int, controls the verbosity: the higher, the more messages
         '''
-        self.grid_search_parameters = {'estimator__' + k: v for k, v
+        self.grid_search_parameters = {'estimator__estimator__' + k: v for k, v
                                        in parameters.items()}
         clf = self.clf
 
