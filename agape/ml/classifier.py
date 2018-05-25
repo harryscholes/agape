@@ -1,12 +1,14 @@
 '''Classifiers.
 '''
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import GridSearchCV
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
+from dask_searchcv import GridSearchCV
+import warnings
 from ..base import Base
 
 __all__ = ["SVClassifier", "RFClassifier"]
@@ -48,14 +50,16 @@ class Classifier(Base):
                                        in parameters.items()}
         clf = self.clf
 
+        if verbose is not True:
+            warnings.filterwarnings("ignore", category=UserWarning)
+
         self.clf_grid_search = GridSearchCV(
             clf,
             self.grid_search_parameters,
             cv=cv,
             scoring=scoring,
             refit=refit,
-            n_jobs=self.n_jobs,
-            verbose=verbose)
+            n_jobs=self.n_jobs)
 
         self.clf_grid_search.fit(X, y)
         print('\n`clf.best_estimator_`:\n',
