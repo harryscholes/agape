@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, make_scorer
 from sklearn.model_selection import ShuffleSplit
 from scipy.stats import sem as std
-from agape.ml.classifier import SVClassifier
+from agape.ml.classifier import SVClassifier, RFClassifier, LRClassifier
 from agape.utils import stdout
 from collections import defaultdict
 
@@ -66,7 +66,7 @@ class _Performance:
 
 
 def cross_validation(X, y, n_trials=10, n_jobs=1,
-                     random_state=None):
+                     random_state=None, clf_type='LRC'):
     '''Perform model selection via cross validation.
     '''
     stdout('Number of samples pre-filtering', X.shape)
@@ -76,15 +76,6 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
     y = np.delete(y, del_rid, axis=0)
     X = np.delete(X, del_rid, axis=0)
     stdout('Number of samples post-filtering', X.shape)
-
-    # Hyperparameters
-    C = np.logspace(-1, 2, 4)
-    gamma = np.logspace(-3, 0, 4)
-
-    grid_search_params = {
-        'estimator__C': C,
-        'estimator__gamma': gamma,
-        'estimator__kernel': ['rbf']}
 
     # Scoring
     scoring = {
@@ -117,19 +108,31 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
         stdout('Train samples', y_train.shape[0])
         stdout('Test samples', y_test.shape[0])
 
+        # Classifier
+        if clf_type == 'SVC':
+            clf = SVClassifier(n_jobs=n_jobs, random_state=random_state)
+            grid_search_params = {
+                'C': np.logspace(-2, 1, 4),
+                'gamma': np.logspace(-3, 0, 4),
+                'kernel': ['rbf']}
+        elif clf_type == 'LRC':
+            clf = LRClassifier(n_jobs=n_jobs, random_state=random_state)
+            grid_search_params = {'C': np.logspace(-2, 1, 4)}
+        # elif clf_type == 'RFC':
+        #     clf = RFClassifier(n_jobs=n_jobs, random_state=random_state)
+        else:
+            raise ValueError('`clf` must be a class in agape.ml.classifer')
+
         # Perform a grid search over the hyperparameter ranges
 
         stdout('Grid search')
-
-        # Classifier
-        clf = SVClassifier(n_jobs=n_jobs, random_state=random_state)
 
         clf.grid_search(
             X_train,
             y_train,
             grid_search_params,
             scoring=scoring,
-            refit='m_AUPR',
+            refit='m_AUPR',  # TODO use refit scoring function from deepNF
             cv=5,
             verbose=10)
 
