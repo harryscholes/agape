@@ -42,11 +42,15 @@ class GO(Base):
     # Arguments
         args: str, sets of GO evidence codes to be included
     """
-    def __init__(self, *allowed_evidence_codes):
+    def __init__(self, *allowed_evidence_codes,
+                 go_dag_path='$AGAPEDATA/go.obo',
+                 associations_path='$AGAPEDATA/gene_association.pombase'):
         super().__init__()
 
         self.set_evidence_codes()
         self.set_allowed_evidence_codes(allowed_evidence_codes)
+        self.go_dag_path = os.path.expandvars(go_dag_path)
+        self.associations_path = os.path.expandvars(associations_path)
 
     def set_evidence_codes(self):
         self.evidence_codes = {
@@ -90,14 +94,13 @@ class GO(Base):
             raise GeneOntologyError(
                 f"Not a valid evidence code set: {err.args[0]}")
 
-    def load_go_dag(self, filepath=None):
+    def load_go_dag(self):
         """Load GO DAG.
 
         # Arguments
             filepath: str (optional), path to go.obo
         """
-        if filepath is None:
-            filepath = os.path.join(data, "go.obo")
+        filepath = self.go_dag_path
         if not os.path.exists(filepath):
             raise GeneOntologyError(f"{os.path.basename(filepath)} does not exist at {os.path.dirname(filepath)}")
 
@@ -113,11 +116,7 @@ class GO(Base):
     def __iter__(self):
         """Iterate over annotations.
         """
-        # This is mainly used for testing
-        if hasattr(self, "custom_association_file_path"):
-            filepath = self.custom_association_file_path
-        else:
-            filepath = os.path.join(data, "gene_association.pombase")
+        filepath = self.associations_path
         if not os.path.exists(filepath):
             raise GeneOntologyError(f"{os.path.basename(filepath)} does not exist at {os.path.dirname(filepath)}")
 
@@ -159,7 +158,7 @@ class GO(Base):
 
         # Load a defaultdict mapping gene_ids to the GO terms annotated to them
         if not hasattr(self, "all_associations"):
-            self.all_associations = read_gaf(os.path.join(data, "gene_association.pombase"))
+            self.all_associations = read_gaf(self.associations_path)
 
         all_associations = copy.deepcopy(self.all_associations)
 
