@@ -37,6 +37,7 @@ parser.add_argument('-s', '--random_state', default=-1, type=int,
                           number will be used as a seed.')
 parser.add_argument('--tags', default="", type=str)
 parser.add_argument('-j', '--n_jobs', default=1, type=int)
+parser.add_argument('-c', '--clf_type', default='LRC', type=str)
 parser.add_argument('--test', default=None, type=int,
                     help='If True, then only a subset of the data is used')
 args = parser.parse_args()
@@ -55,6 +56,7 @@ validation = args.validation
 n_jobs = args.n_jobs
 random_state = args.random_state
 level = args.level
+clf_type = args.clf_type
 test = args.test
 
 
@@ -126,23 +128,22 @@ def main():
 
     annotations = GO[level]
 
-    # Only use a subset of the data for testing purposes
-    if test is not None:
-        for w in (sklearn.exceptions.UndefinedMetricWarning,
-                  UserWarning, RuntimeWarning):
-            warnings.filterwarnings(
-                "ignore",
-                category=w)
+    # Silence certain warning messages during cross-validation
+    for w in (sklearn.exceptions.UndefinedMetricWarning, UserWarning,
+              RuntimeWarning):
+        warnings.filterwarnings("ignore", category=w)
 
-        embeddings = embeddings[:test]
-        annotations = annotations[:test]
+    # Only use a subset of the data for testing purposes
+    embeddings = embeddings[:test]
+    annotations = annotations[:test]
 
     performance = cross_validation(
         embeddings,
         annotations,
         n_trials=n_trials,
         n_jobs=n_jobs,
-        random_state=random_state)
+        random_state=random_state,
+        clf_type=clf_type)
 
     pprint(performance)
 
