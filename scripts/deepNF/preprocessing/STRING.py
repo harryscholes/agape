@@ -6,7 +6,7 @@ lists of the network's subchannels (excluding text mining) in `.txt` format
 for use by `preprocessing.py`.
 
 Usage:
-    python STRING.py --output-path $AGAPEDATA/deepNF
+    python STRING.py --output-path $AGAPEDATA/deepNF/networks
 '''
 import os
 import numpy as np
@@ -21,8 +21,8 @@ import argparse
 ##########################
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-o', '--output-path', default='$AGAPEDATA/deepNF',
-                    type=str)
+parser.add_argument('-o', '--output-path',
+                    default='$AGAPEDATA/deepNF/networks', type=str)
 args = parser.parse_args()
 
 
@@ -30,8 +30,7 @@ args = parser.parse_args()
 # io #
 ######
 
-if directory_exists(args.output_path):
-    output_path = args.output_path
+output_path = directory_exists(args.output_path)
 
 
 ########
