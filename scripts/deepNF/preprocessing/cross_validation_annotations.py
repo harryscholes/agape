@@ -11,6 +11,7 @@ import os
 import itertools
 import numpy as np
 from scipy import io
+import pandas as pd
 from goatools.godag_obosm import OboToGoDagSmall
 from agape.load import Genes
 from agape.gene_ontology import GO
@@ -47,7 +48,10 @@ def propagate_parent_terms(associations, go_dag):
 def get_gene_index():
     '''Return a dictionary mapping genes to array indices.
     '''
-    genes = Genes().genes
+    genes = pd.read_csv(os.path.join(os.path.expandvars('$AGAPEDATA'),
+                        'deepNF', 'networks', 'yeast_net_genes.csv'),
+                        header=None)[0]
+    genes = genes.str[5:-2]
     return {k: v for k, v in zip(sorted(genes), range(len(genes)))}
 
 
@@ -126,7 +130,7 @@ def main():
     '''Run for each ontology and for three levels of term counts.
     '''
     # Load GO DAG
-    go = GO("experimental")
+    go = GO("experimental", "computational", "curated")
     go.load_go_dag()
     go_dag = go.go_dag
 
@@ -167,7 +171,8 @@ def main():
             associations_ontologies_levels[f'{ontology}_{idx + 1}'] = M.T
 
     # Save `associations_ontologies_levels` to a .mat file
-    output_dir = os.path.join(os.path.expandvars('$AGAPEDATA'), 'annotations')
+    output_dir = os.path.join(os.path.expandvars('$AGAPEDATA'), 'deepNF',
+                              'annotations')
     directory_exists(output_dir)
     output_file = 'yeast_annotations.mat'
     io.savemat(
