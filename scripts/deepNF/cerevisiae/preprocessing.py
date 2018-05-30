@@ -8,7 +8,8 @@ Code originally by Vladimir Gligorijevi, adapted from
 https://github.com/VGligorijevic/deepNF.
 
 Usage:
-    python preprocessing.py
+    python preprocessing.py --genes 6391  # STRING v10.5
+    python preprocessing.py --genes 6400  # STRING v9.1
 '''
 import numpy as np
 import scipy.io as sio
