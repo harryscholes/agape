@@ -147,6 +147,8 @@ def main():
 
     pprint(performance)
 
+    performance['level'] = level
+
     fout = f'{model_name}_{level}_{validation}_performance.json'
 
     with open(os.path.join(results_path, fout), 'w') as f:
