@@ -118,8 +118,9 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
         elif clf_type == 'LRC':
             clf = LRClassifier(n_jobs=n_jobs, random_state=random_state)
             grid_search_params = {'C': np.logspace(-2, 1, 4)}
-        # elif clf_type == 'RFC':
-        #     clf = RFClassifier(n_jobs=n_jobs, random_state=random_state)
+        elif clf_type == 'RFC':
+            clf = RFClassifier(n_jobs=n_jobs, random_state=random_state)
+            grid_search_params = {'max_features': ['auto']}
         else:
             raise ValueError('`clf` must be a class in agape.ml.classifer')
 
@@ -132,7 +133,7 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
             y_train,
             grid_search_params,
             scoring=scoring,
-            refit='m_AUPR',  # TODO use refit scoring function from deepNF
+            refit='m_AUPR',
             cv=5,
             verbose=10)
 
