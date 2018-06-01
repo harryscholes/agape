@@ -115,7 +115,7 @@ def main():
     #######################
 
     annotation_dir = os.path.join(data_path, 'annotations')
-    annotation_file = os.path.join(annotation_dir, 'yeast_annotations.mat')
+    annotation_file = os.path.join(annotation_dir, f'{org}_annotations.mat')
     stdout('Loading GO annotations', annotation_file)
 
     GO = sio.loadmat(annotation_file)
