@@ -15,6 +15,7 @@ import pandas as pd
 from collections import defaultdict
 from goatools.obo_parser import GODag
 from goatools.associations import read_gaf
+from Bio.UniProt.GOA import record_has
 from agape.exceptions import GeneOntologyError
 import copy
 from goatools.godag_obosm import OboToGoDagSmall
@@ -55,7 +56,7 @@ def get_gene_index():
     '''
     genes = pd.read_csv(
         os.path.join(
-            os.path.expandvars('$AGAPEDATA'),
+            os.path.expandvars('$CEREVISIAEDATA'),
             'deepNF',
             'cerevisiae_net_genes.csv'),
         header=None)
