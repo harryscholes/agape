@@ -115,7 +115,10 @@ def main():
     #######################
 
     annotation_dir = os.path.join(data_path, 'annotations')
-    annotation_file = os.path.join(annotation_dir, f'{org}_annotations.mat')
+    if validation == 'cerevisiae':
+        annotation_file = os.path.join(annotation_dir, 'cerevisiae_annotations.mat')
+    else:
+        annotation_file = os.path.join(annotation_dir, 'yeast_annotations.mat')
     stdout('Loading GO annotations', annotation_file)
 
     GO = sio.loadmat(annotation_file)
