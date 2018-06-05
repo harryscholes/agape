@@ -95,6 +95,7 @@ def main():
             batch_size=batch_size,
             shuffle=True,
             validation_split=0.1,
+            verbose=2,
             callbacks=[
                 EarlyStopping(
                     monitor='val_loss',
