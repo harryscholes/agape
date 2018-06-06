@@ -35,7 +35,7 @@ def ClfGS():
             LogisticRegression(random_state=random_state),
             n_jobs=-1),
         scale=True)
-    parameters = {'estimator__C': np.logspace(-1, 1, 3)}
+    parameters = {'C': np.logspace(-1, 1, 3)}
     clf.grid_search(X, y, parameters)
     return clf
 

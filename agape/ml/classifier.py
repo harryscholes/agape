@@ -1,15 +1,17 @@
 '''Classifiers.
 '''
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import GridSearchCV
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
+from dask_searchcv import GridSearchCV
+import warnings
 from ..base import Base
 
-__all__ = ["SVClassifier", "RFClassifier"]
+__all__ = ["SVClassifier", "RFClassifier", "LRClassifier"]
 
 
 class Classifier(Base):
@@ -32,7 +34,8 @@ class Classifier(Base):
     def __name__(self):
         return self.__class__.__name__
 
-    def grid_search(self, X, y, parameters, scoring=None, cv=5, refit=True):
+    def grid_search(self, X, y, parameters, scoring=None, cv=5, refit=True,
+                    verbose=False):
         '''Perform an exhaustive search over hyperparameter combinations.
 
         # Arguments
@@ -41,10 +44,14 @@ class Classifier(Base):
             parameters: dict, hyperparameter ranges
             scoring: dict, scoring functions e.g. {'acc': accuracy_score, ...}
             refit: bool, fit an estimator with the best parameters if True
+            verbose: int, controls the verbosity: the higher, the more messages
         '''
-        self.grid_search_parameters = {'estimator__' + k: v for k, v
+        self.grid_search_parameters = {'estimator__estimator__' + k: v for k, v
                                        in parameters.items()}
         clf = self.clf
+
+        if verbose is not True:
+            warnings.filterwarnings("ignore", category=UserWarning)
 
         self.clf_grid_search = GridSearchCV(
             clf,
@@ -154,7 +161,8 @@ class SVClassifier(Classifier):
                 SVC(probability=True,
                     random_state=random_state),
                 n_jobs=n_jobs),
-            scale=True)
+            scale=True,
+            n_jobs=n_jobs)
 
 
 class RFClassifier(Classifier):
@@ -166,4 +174,19 @@ class RFClassifier(Classifier):
                 RandomForestClassifier(
                     n_jobs=n_jobs,
                     random_state=random_state),
-                n_jobs=n_jobs))
+                n_jobs=n_jobs),
+            n_jobs=n_jobs)
+
+
+class LRClassifier(Classifier):
+    '''Linear Regression Classifer.
+    '''
+    def __init__(self, random_state=None, n_jobs=1):
+        super().__init__(
+            OneVsRestClassifier(
+                LogisticRegression(
+                    penalty='l2',
+                    random_state=random_state),
+                n_jobs=n_jobs),
+            scale=True,
+            n_jobs=n_jobs)

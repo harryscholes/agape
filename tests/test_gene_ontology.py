@@ -75,20 +75,22 @@ class TestGO:
         assert hasattr(GoObj, "go_dag")
 
     def test_load_go_dag_raises_GeneOntologyError(self, GoObj):
+        GoObj.go_dag_path = "NOTAPATH"
         with raises(GeneOntologyError):
-            GoObj.load_go_dag("NOTAPATH")
+            GoObj.load_go_dag()
 
     def test_iter(self, GoObj):
         assert inspect.isgenerator(iter(GoObj))
 
     def test_iter_raises_GeneOntologyError(self, GoObj):
         try:
-            GoObj.set("custom_association_file_path", "NOTAPATH")
+            path = GoObj.associations_path
+            GoObj.set("associations_path", "NOTAPATH")
             with raises(GeneOntologyError):
                 iterator = iter(GoObj)
                 next(iterator)
         finally:
-            delattr(GoObj, "custom_association_file_path")
+            GoObj.associations_path = path
 
     def test_iter_next_no_evidence_codes(self, GoObj):
         iterator = iter(GoObj)

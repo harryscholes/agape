@@ -30,7 +30,6 @@ def AE(input_dim=6400, encoding_dims=3*[256]):
     sgd = SGD(lr=0.2, momentum=0.95, decay=0.0, nesterov=False)
     model = Model(inputs=input_layer, outputs=decoded)
     model.compile(optimizer=sgd, loss='binary_crossentropy')
-    print(model.summary())
 
     return model
 

@@ -10,7 +10,7 @@ import glob
 from keras.models import load_model
 from sklearn.preprocessing import minmax_scale
 import scipy.io as sio
-from agape.deepNF.utils import load_ppmi_matrices
+from agape.deepNF.utils import load_ppmi_matrices, mkdir
 from agape.utils import stdout
 
 print(__doc__)
@@ -20,6 +20,7 @@ print(__doc__)
 ##########################
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-o', '--organism', default='yeast', type=str)
 parser.add_argument('-m', '--models-path', default="./models", type=str)
 parser.add_argument('-r', '--results-path', default="./results", type=str)
 parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
@@ -30,6 +31,7 @@ args = parser.parse_args()
 
 stdout("Command line arguments", args)
 
+org = args.organism
 models_path = os.path.expandvars(args.models_path)
 results_path = os.path.expandvars(args.results_path)
 data_path = os.path.expandvars(args.data_path)
@@ -38,6 +40,12 @@ validation = args.validation
 
 
 def main():
+    ######################
+    # Prepare filesystem #
+    ######################
+
+    mkdir(results_path)
+
     #################
     # Load networks #
     #################
@@ -50,7 +58,7 @@ def main():
 
     model_names = sorted(glob.glob(
         os.path.join(os.path.expandvars(models_path),
-                     'yeast_MDA_arch_*.h5')))
+                     f'{org}_MDA_arch_*.h5')))
 
     stdout("Model names", model_names)
 

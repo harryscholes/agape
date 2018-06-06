@@ -12,12 +12,8 @@ import scipy.io as sio
 from agape.deepNF.validation import cross_validation
 from agape.deepNF.utils import load_embeddings, mkdir
 from agape.utils import stdout, directory_exists
-# import sklearn
-# import warnings
-
-# warnings.filterwarnings(
-#     "ignore",
-#     category=sklearn.exceptions.UndefinedMetricWarning)
+import sklearn
+import warnings
 
 print(__doc__)
 
@@ -26,8 +22,7 @@ print(__doc__)
 ##########################
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-g', '--gene-ontology', type=str, required=True)
-parser.add_argument('-l', '--level', type=int, required=True)
+parser.add_argument('-l', '--level', required=True)
 parser.add_argument('-o', '--organism', default='yeast', type=str)
 parser.add_argument('-t', '--model-type', default='mda', type=str)
 parser.add_argument('-m', '--models-path', default="models", type=str)
@@ -42,6 +37,9 @@ parser.add_argument('-s', '--random_state', default=-1, type=int,
                           number will be used as a seed.')
 parser.add_argument('--tags', default="", type=str)
 parser.add_argument('-j', '--n_jobs', default=1, type=int)
+parser.add_argument('-c', '--clf_type', default='LRC', type=str)
+parser.add_argument('--test', default=None, type=int,
+                    help='If True, then only a subset of the data is used')
 args = parser.parse_args()
 
 stdout("Command line arguments", args)
@@ -58,7 +56,8 @@ validation = args.validation
 n_jobs = args.n_jobs
 random_state = args.random_state
 level = args.level
-gene_ontology = args.gene_ontology
+clf_type = args.clf_type
+test = args.test
 
 
 # Set random_state seed for sklearn
@@ -72,24 +71,16 @@ else:
 
 # Validation type
 validation_types = {
-    'cv': ('P_3', 'P_2', 'P_1', 'F_3', 'F_2', 'F_1', 'C_3', 'C_2', 'C_1')}
+    'cv': ('P_1', 'P_2', 'P_3', 'F_1', 'F_2', 'F_3', 'C_1', 'C_2', 'C_3'),
+    'cerevisiae': ('level1', 'level2', 'level3')}
 
 try:
     annotation_types = validation_types[validation]
 except KeyError as err:
     err.args = (f'Not a valid validation type: {validation}',)
 
-
-# Ontology
-if gene_ontology not in {'P', 'F', 'C'}:
-    raise ValueError('--gene-ontology must be P, F or C')
-
-
-# Level
-if level not in {1, 2, 3}:
-    raise ValueError('--level must be 1, 2 or 3')
-
-level = f'{gene_ontology}_{level}'
+if level not in annotation_types:
+    raise ValueError(f'Level must be one of:', annotation_types)
 
 
 # Performance measures
@@ -123,35 +114,48 @@ def main():
     # Load GO annotations #
     #######################
 
-    if validation == 'cv':
-        annotation_dir = os.path.join(
-            os.path.expandvars('$AGAPEDATA'), 'annotations')
-        annotation_file = 'yeast_annotations.mat'
-        stdout('Loading GO annotations')
+    annotation_dir = os.path.join(data_path, 'annotations')
+    if validation == 'cerevisiae':
+        annotation_file = os.path.join(annotation_dir, 'cerevisiae_annotations.mat')
+    else:
+        annotation_file = os.path.join(annotation_dir, 'yeast_annotations.mat')
+    stdout('Loading GO annotations', annotation_file)
 
-        GO = sio.loadmat(
-            os.path.join(annotation_dir, annotation_file))
+    GO = sio.loadmat(annotation_file)
 
     ####################
     # Train classifier #
     ####################
 
-    if validation == 'cv':
-        stdout('Running cross-validation for', level)
+    stdout('Running cross-validation for', level)
 
-        performance = cross_validation(
-            embeddings,
-            GO[level],
-            n_trials=n_trials,
-            n_jobs=n_jobs,
-            random_state=random_state)
+    annotations = GO[level]
 
-        pprint(performance)
+    # Silence certain warning messages during cross-validation
+    for w in (sklearn.exceptions.UndefinedMetricWarning, UserWarning,
+              RuntimeWarning):
+        warnings.filterwarnings("ignore", category=w)
 
-        fout = f'{model_name}_{level}_{validation}_performance.json'
+    # Only use a subset of the data for testing purposes
+    embeddings = embeddings[:test]
+    annotations = annotations[:test]
 
-        with open(os.path.join(results_path, fout), 'w') as f:
-            json.dump(performance, f)
+    performance = cross_validation(
+        embeddings,
+        annotations,
+        n_trials=n_trials,
+        n_jobs=n_jobs,
+        random_state=random_state,
+        clf_type=clf_type)
+
+    performance['level'] = level
+
+    pprint(performance)
+
+    fout = f'{model_name}_{level}_{validation}_performance.json'
+
+    with open(os.path.join(results_path, fout), 'w') as f:
+        json.dump(performance, f)
 
 
 if __name__ == '__main__':
