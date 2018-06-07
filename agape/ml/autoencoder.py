@@ -1,4 +1,5 @@
-'''Flexible classes build and train autoencoders and generate embeddings.
+'''Flexible classes to build and train autoencoders, which can be used to
+generate low-dimensional embeddings.
 
 # Autoencoder architectures
     Autoencoder: one hidden layer
