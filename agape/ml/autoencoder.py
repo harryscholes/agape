@@ -1,3 +1,14 @@
+'''Flexible classes build and train autoencoders and generate embeddings.
+
+# Autoencoder architectures
+    Autoencoder: one hidden layer
+    DeepAutoencoder: n hidden layers
+    MultimodalAutoencoder: m input modes with n hidden layers
+
+# Autoencoder variants
+    Sparse: sparse embeddings using l1 regularization
+    Denoising: corrupt input data with noise
+'''
 import numpy as np
 from keras.layers import Dense, Input, Concatenate
 from keras.models import Model
