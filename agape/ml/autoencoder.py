@@ -65,8 +65,8 @@ class Autoencoder:
         '''
         self._build()
         self.autoencoder.fit(
-            self.x_train_in, self.x_train_out,
-            validation_data=(self.x_val_in, self.x_val_out),
+            self.x_train_in, self.x_train,
+            validation_data=(self.x_val_in, self.x_val),
             epochs=self.epochs, batch_size=self.batch_size, shuffle=True,
             verbose=self.verbose)
 
@@ -84,16 +84,16 @@ class Autoencoder:
     def _param_check(self):
         '''Check validity of function arguments.
         '''
-        xs = ('x_train', 'x_val')
-        if all(isinstance(getattr(self, x), np.ndarray) for x in xs):
-            pass  # Autoencoder
-        elif all(isinstance(y, np.ndarray) for x in xs
-                 for y in getattr(self, x)):
-            pass  # Multimodal
-        else:
-            raise TypeError(' '.join((
-                '`x_train` and `x_val` must be',
-                'np.ndarray or List[np.ndarray]')))
+        xs = [getattr(self, x) for x in ('x_train', 'x_val')]
+        if all(isinstance(x, list) for x in xs):
+            if not all(isinstance(x_i, np.ndarray) for x in xs for x_i in x):
+                raise TypeError('`x`s must be List[np.ndarray] for Multimodal')
+            if not self.layers:
+                raise TypeError(
+                    'Multimodal is only implemented for Deep autoencoders',
+                    '`layer` must be provided')
+        elif not all(isinstance(x, np.ndarray) for x in xs):
+            raise TypeError('`x`s must be np.ndarray or List[np.ndarray]')
 
         if all((self.embedding_size is None, self.layers is None)):
             raise ValueError(
@@ -102,49 +102,15 @@ class Autoencoder:
             raise ValueError(
                 'Cannot specify both: `embdding_size` and `layers`')
 
-        if not (self.layers is None or isinstance(self.layers, list)):
-            raise TypeError('`layers` must be a list of ints or None')
-        if self.layers:
-            if not all(isinstance(l, int) for l in self.layers):
-                raise TypeError('`layers` must be a list of ints')
-            if not len(self.layers) > 1:
-                raise ValueError('`len(layers)` must be > 1')
+        if self.layers and not len(self.layers) > 1:
+            raise ValueError('`len(layers)` must be > 1')
 
-        if not (self.sparse is None or isinstance(self.sparse, float)):
-            raise TypeError('`sparse` must be a float or None')
-
-        if not isinstance(self.epochs, int):
-            raise TypeError('`epochs` must be an int')
-        if not self.epochs > 0:
-            raise ValueError('`epochs` must be positive')
-
-        if not isinstance(self.batch_size, int):
-            raise TypeError('`batch_size` must be an int')
-        if not self.batch_size > 0:
-            raise ValueError('`batch_size` must be positive')
-
-        if not (self.denoising is None or isinstance(self.denoising, float)):
-            raise TypeError('`denoising` must be a float or None')
-        if self.denoising:
-            if not 0 <= self.denoising <= 1:
-                raise ValueError('`denosing` must be between 0 and 1')
-            self.x_train_in = add_noise(self.x_train, self.denoising)
-            self.x_val_in = add_noise(self.x_val, self.denoising)
-        else:
+        if self.denoising is None:
             self.x_train_in = self.x_train
             self.x_val_in = self.x_val
-        self.x_train_out = self.x_train
-        self.x_val_out = self.x_val
-
-        if self.denoising is None or 0 <= self.denoising <= 1:
-            if self.denoising is not None:
-                self.x_train_in = add_noise(self.x_train, self.denoising)
-                self.x_val_in = add_noise(self.x_val, self.denoising)
-            else:
-                self.x_train_in = self.x_train
-                self.x_val_in = self.x_val
-            self.x_train_out = self.x_train
-            self.x_val_out = self.x_val
+        elif 0 <= self.denoising <= 1:
+            self.x_train_in = add_noise(self.x_train, self.denoising)
+            self.x_val_in = add_noise(self.x_val, self.denoising)
         else:
             raise ValueError('`denoising` must be between 0 and 1')
 
@@ -237,5 +203,11 @@ class Autoencoder:
 def add_noise(X, noise_factor):
     '''Add noise to training data for denoising.
     '''
-    X_n = X + noise_factor * np.random.normal(size=X.shape)
-    return np.clip(X_n, 0., 1.)
+    def _add_noise(x):
+        x_n = x + noise_factor * np.random.normal(size=x.shape)
+        return np.clip(x_n, 0., 1.)
+
+    try:
+        return _add_noise(X)
+    except AttributeError:  # Multimodal
+        return [_add_noise(X_i) for X_i in X]
