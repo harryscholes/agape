@@ -26,7 +26,7 @@ class AbstractAutoencoder(ABC):
         embedding_size: int, size of embedding
         layers: List[int], layer sizes
     '''
-    invariant_arguments = '''
+    generic_arguments = '''
         sparse: float (optional), l1 regularization factor if Sparse
         denoising: float (optional), noise factor if Denoising
         epochs: int, number of epochs to train for
@@ -36,14 +36,14 @@ class AbstractAutoencoder(ABC):
         loss: str, loss function
         verbose: int, logging verbosity
     '''
-    __doc__ += invariant_arguments[5:]
+    __doc__ += generic_arguments[5:]
 
     def __init__(self,
-                 # Optional args in subclasses
+                 # Subclass-specific arguments
                  embedding_size: Union[int, None] = None,
                  layers: Union[List[int], None] = None,
                  *,
-                 # Required args in subclasses
+                 # Generic arguments
                  x_train: Union[np.ndarray, List[np.ndarray]],
                  x_val: Union[np.ndarray, List[np.ndarray]],
                  sparse: Union[float, None] = None,
@@ -84,8 +84,8 @@ class AbstractAutoencoder(ABC):
         '''
         return self.autoencoder.summary()
 
-    def predict(self, x: Union[np.ndarray, List[np.ndarray]]
-                ) -> Union[np.ndarray, List[np.ndarray]]:
+    def predict(self, x: Union[np.ndarray, List[np.ndarray]]) \
+            -> Union[np.ndarray, List[np.ndarray]]:
         '''Predict `x`.
         '''
         return self.autoencoder.predict(x)
@@ -111,14 +111,14 @@ class AbstractAutoencoder(ABC):
             self.x_train_in = self.x_train
             self.x_val_in = self.x_val
         elif 0 <= self.denoising <= 1:
-            self.x_train_in = self.add_noise(self.x_train)
-            self.x_val_in = self.add_noise(self.x_val)
+            self.x_train_in = self._add_noise(self.x_train)
+            self.x_val_in = self._add_noise(self.x_val)
         else:
             raise ValueError('`denoising` must be between 0 and 1')
 
     @abstractmethod
     def _param_check(self):
-        '''Abstract param_check method.
+        '''Must check subclass-specific parameters.
         '''
         pass
 
@@ -132,9 +132,7 @@ class AbstractAutoencoder(ABC):
 
     @abstractmethod
     def _build(self):
-        '''Abstract build method.
-
-        Must set the following attributes:
+        '''Must set the following attributes:
          - input
          - encoded
          - decoded
@@ -153,17 +151,17 @@ class AbstractAutoencoder(ABC):
             return Dense(embedding_size, activation=self.activation,
                          activity_regularizer=l1(self.sparse))(previous_layer)
 
-    def add_noise(self, X):
+    def _add_noise(self, X):
         '''Add noise to `X`.
         '''
-        def _add_noise(x):
+        def __add_noise(x):
             x_n = x + self.denoising * np.random.normal(size=x.shape)
             return np.clip(x_n, 0., 1.)
 
         try:
-            return _add_noise(X)
+            return __add_noise(X)
         except AttributeError:  # Multimodal
-            return [_add_noise(X_i) for X_i in X]
+            return [__add_noise(X_i) for X_i in X]
 
 
 class Autoencoder(AbstractAutoencoder):
@@ -174,7 +172,7 @@ class Autoencoder(AbstractAutoencoder):
         x_val: np.ndarray, validation data
         embedding_size: int, size of embedding
     '''
-    __doc__ += AbstractAutoencoder.invariant_arguments[5:]
+    __doc__ += AbstractAutoencoder.generic_arguments[5:]
 
     def __init__(self,
                  x_train: np.ndarray,
@@ -214,7 +212,7 @@ class DeepAutoencoder(AbstractAutoencoder):
         x_val: np.ndarray, validation data
         layers: List[int], layers sizes
     '''
-    __doc__ += AbstractAutoencoder.invariant_arguments[5:]
+    __doc__ += AbstractAutoencoder.generic_arguments[5:]
 
     def __init__(self,
                  x_train: np.ndarray,
@@ -267,7 +265,7 @@ class MultimodalAutoencoder(AbstractAutoencoder):
         x_val: List[np.ndarray], validation data
         layers: List[int], layers sizes
     '''
-    __doc__ += AbstractAutoencoder.invariant_arguments[5:]
+    __doc__ += AbstractAutoencoder.generic_arguments[5:]
 
     def __init__(self,
                  x_train: List[np.ndarray],
