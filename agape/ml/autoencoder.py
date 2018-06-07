@@ -2,6 +2,7 @@ import numpy as np
 from keras.layers import Dense, Input, Concatenate
 from keras.models import Model
 from keras.regularizers import l1
+from typing import Union, List
 
 __all__ = ['AutoEncoder']
 
@@ -9,17 +10,42 @@ __all__ = ['AutoEncoder']
 class AutoEncoder:
     '''Autoencoder class.
 
-    For autoencoder flavours:
-     - vanilla
-     - sparse
-     - deep
-     - denoising
+    Autoencoder architectures:
+     - Shallow
+     - Deep
+       - Multimodal
+
+    Autoencoder variants (available for all architectures):
+     - Sparse
+     - Denoising
+
+    # Arguments
+        x_train: np.ndarray (List[np.ndarray] if Multimodal), training data
+        x_val: np.ndarray (List[np.ndarray] if Multimodal), validation data
+        embedding_size: int (optional), size of embedding
+        layers: List[int] (optional), layer sizes if Deep
+        sparse: float (optional), l1 regularization factor if Sparse
+        denoising: float (optional), noise factor if Denoising
+        epochs: int, number of epochs to train for
+        batch_size: int, batch size
+        activation: str, activation function
+        optimizer: str, training optimizer
+        loss: str, loss function
+        verbose: int, logging verbosity
     '''
-    def __init__(self, x_train, x_val, embedding_size=None,
-                 layers=None, sparse=None, denoising=None,
-                 epochs=1, batch_size=128, activation='relu',
-                 optimizer='adam', loss='binary_crossentropy',
-                 verbose=1):
+    def __init__(self,
+                 x_train: Union[np.ndarray, List[np.ndarray]],
+                 x_val: Union[np.ndarray, List[np.ndarray]],
+                 embedding_size: Union[int, None] = None,
+                 layers: Union[List[int], None] = None,
+                 sparse: Union[float, None] = None,
+                 denoising: Union[float, None] = None,
+                 epochs: int = 1,
+                 batch_size: int = 128,
+                 activation: str = 'relu',
+                 optimizer: str = 'adam',
+                 loss: str = 'binary_crossentropy',
+                 verbose: int = 1):
         self.x_train = x_train
         self.x_val = x_val
         self.embedding_size = embedding_size
@@ -44,12 +70,13 @@ class AutoEncoder:
             epochs=self.epochs, batch_size=self.batch_size, shuffle=True,
             verbose=self.verbose)
 
-    def predict(self, x):
+    def predict(self, x: Union[np.ndarray, List[np.ndarray]]
+                ) -> Union[np.ndarray, List[np.ndarray]]:
         '''Predict `x`.
         '''
         return self.autoencoder.predict(x)
 
-    def encode(self, x):
+    def encode(self, x: Union[np.ndarray, List[np.ndarray]]) -> np.ndarray:
         '''Encode `x`.
         '''
         return self.encoder.predict(x)
@@ -194,7 +221,7 @@ class AutoEncoder:
             Dense(self.x_train[i].shape[1], activation='sigmoid')(hidden[i])
             for i in range(len(self.x_train))]
 
-    def _encoder_layer(self, embedding_size, previous_layer):
+    def _encoder_layer(self, embedding_size: int, previous_layer: Dense):
         '''Generates the middle encoding layer.
 
         Optionally applies l1 regulation for sparsity.
