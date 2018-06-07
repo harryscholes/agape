@@ -20,6 +20,10 @@ class AbstractAutoencoder(ABC):
      - Sparse
      - Denoising
 
+    Subclasses must implement:
+     - `_param_check` to check subclass-specific arguments
+     - `_build` to build the autoencoder architecture
+
     # Arguments
         x_train: Union[np.ndarray, List[np.ndarray]], training data
         x_val: Union[np.ndarray, List[np.ndarray]], validation data
