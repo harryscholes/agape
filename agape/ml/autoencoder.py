@@ -83,12 +83,11 @@ class AbstractAutoencoder(ABC):
         self.loss = loss
         self.verbose = verbose
         self.param_check()
-        super().__init__()
+        self.build()
 
     def train(self):
         '''Train the autoencoder.
         '''
-        self.build()
         self.autoencoder.fit(
             self.x_train_in, self.x_train,
             validation_data=(self.x_val_in, self.x_val),
