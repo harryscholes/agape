@@ -16,14 +16,14 @@ class AutoEncoder:
      - denoising
     '''
     def __init__(self, x_train, x_val, embedding_size=None,
-                 deep=None, sparse=None, denoising=None,
+                 layers=None, sparse=None, denoising=None,
                  epochs=1, batch_size=128, activation='relu',
                  optimizer='adam', loss='binary_crossentropy',
                  verbose=1):
         self.x_train = x_train
         self.x_val = x_val
         self.embedding_size = embedding_size
-        self.deep = deep
+        self.layers = layers
         self.sparse = sparse
         self.denoising = denoising
         self.epochs = epochs
@@ -33,6 +33,26 @@ class AutoEncoder:
         self.loss = loss
         self.verbose = verbose
         self._param_check()
+
+    def train(self):
+        '''Train the autoencoder.
+        '''
+        self._build()
+        self.autoencoder.fit(
+            self.x_train_in, self.x_train_out,
+            validation_data=(self.x_val_in, self.x_val_out),
+            epochs=self.epochs, batch_size=self.batch_size, shuffle=True,
+            verbose=self.verbose)
+
+    def predict(self, x):
+        '''Predict `x`.
+        '''
+        return self.autoencoder.predict(x)
+
+    def encode(self, x):
+        '''Encode `x`.
+        '''
+        return self.encoder.predict(x)
 
     def _param_check(self):
         '''Check validity of function arguments.
@@ -48,18 +68,20 @@ class AutoEncoder:
                 '`x_train` and `x_val` must be',
                 'np.ndarray or List[np.ndarray]')))
 
-        if all((self.embedding_size is None, self.deep is None)):
-            raise ValueError('Cannot both be None: `embdding_size` and `deep`')
-        if not any((self.embedding_size is None, self.deep is None)):
-            raise ValueError('Cannot specify both: `embdding_size` and `deep`')
+        if all((self.embedding_size is None, self.layers is None)):
+            raise ValueError(
+                'Cannot both be None: `embdding_size` and `layers`')
+        if not any((self.embedding_size is None, self.layers is None)):
+            raise ValueError(
+                'Cannot specify both: `embdding_size` and `layers`')
 
-        if not (self.deep is None or isinstance(self.deep, list)):
-            raise TypeError('`deep` must be a list of ints or None')
-        if self.deep:
-            if not all(isinstance(l, int) for l in self.deep):
-                raise TypeError('`deep` must be a list of ints')
-            if not len(self.deep) > 1:
-                raise ValueError('`len(deep)` must be > 1')
+        if not (self.layers is None or isinstance(self.layers, list)):
+            raise TypeError('`layers` must be a list of ints or None')
+        if self.layers:
+            if not all(isinstance(l, int) for l in self.layers):
+                raise TypeError('`layers` must be a list of ints')
+            if not len(self.layers) > 1:
+                raise ValueError('`len(layers)` must be > 1')
 
         if not (self.sparse is None or isinstance(self.sparse, float)):
             raise TypeError('`sparse` must be a float or None')
@@ -102,7 +124,7 @@ class AutoEncoder:
     def _build(self):
         '''Builds the autoencoder.
         '''
-        if self.deep:
+        if self.layers:
             if isinstance(self.x_train, np.ndarray):
                 self._build_deep()
             elif isinstance(self.x_train, list):
@@ -128,14 +150,14 @@ class AutoEncoder:
         self.input = Input(shape=(self.x_train.shape[1],))
 
         hidden = self.input
-        for i in range(len(self.deep) - 1):
-            hidden = Dense(self.deep[i], activation=self.activation)(hidden)
+        for i in range(len(self.layers) - 1):
+            hidden = Dense(self.layers[i], activation=self.activation)(hidden)
 
-        self.encoded = self._encoder_layer(self.deep[-1], hidden)
+        self.encoded = self._encoder_layer(self.layers[-1], hidden)
 
         hidden = self.encoded
-        for i in range(len(self.deep) - 2, -1, -1):
-            hidden = Dense(self.deep[i], activation=self.activation)(hidden)
+        for i in range(len(self.layers) - 2, -1, -1):
+            hidden = Dense(self.layers[i], activation=self.activation)(hidden)
 
         self.decoded = Dense(self.x_train.shape[1],
                              activation='sigmoid')(hidden)
@@ -146,50 +168,31 @@ class AutoEncoder:
         self.input = [Input(shape=(self.x_train[i].shape[1],))
                       for i in range(len(self.x_train))]
 
-        hidden = [Dense(self.deep[0], activation=self.activation)(input)
+        hidden = [Dense(self.layers[0], activation=self.activation)(input)
                   for input in self.input]
 
         concatenated = Concatenate()(hidden)
 
         hidden = concatenated
-        for i in range(1, len(self.deep) - 1):
-            hidden = Dense(self.deep[i], activation=self.activation)(hidden)
+        for i in range(1, len(self.layers) - 1):
+            hidden = Dense(self.layers[i], activation=self.activation)(hidden)
 
-        self.encoded = self._encoder_layer(self.deep[-1], hidden)
+        self.encoded = self._encoder_layer(self.layers[-1], hidden)
 
         hidden = self.encoded
-        for i in range(len(self.deep) - 2, 0, -1):
-            hidden = Dense(self.deep[i], activation=self.activation)(hidden)
+        for i in range(len(self.layers) - 2, 0, -1):
+            hidden = Dense(self.layers[i], activation=self.activation)(hidden)
 
-        concatenated = Dense(self.deep[0] * len(self.x_train),
+        concatenated = Dense(self.layers[0] * len(self.x_train),
                              activation=self.activation)(hidden)
 
-        hidden = [Dense(self.deep[0], activation=self.activation)(concatenated)
-                  for i in range(len(self.x_train))]
+        hidden = [
+            Dense(self.layers[0], activation=self.activation)(concatenated)
+            for i in range(len(self.x_train))]
 
         self.decoded = [
             Dense(self.x_train[i].shape[1], activation='sigmoid')(hidden[i])
             for i in range(len(self.x_train))]
-
-    def train(self):
-        '''Train the autoencoder.
-        '''
-        self._build()
-        self.autoencoder.fit(
-            self.x_train_in, self.x_train_out,
-            validation_data=(self.x_val_in, self.x_val_out),
-            epochs=self.epochs, batch_size=self.batch_size, shuffle=True,
-            verbose=self.verbose)
-
-    def predict(self, x):
-        '''Predict `x`.
-        '''
-        return self.autoencoder.predict(x)
-
-    def encode(self, x):
-        '''Encode `x`.
-        '''
-        return self.encoder.predict(x)
 
     def _encoder_layer(self, embedding_size, previous_layer):
         '''Generates the middle encoding layer.
