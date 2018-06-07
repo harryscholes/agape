@@ -34,7 +34,7 @@ def AE(input_dim=6400, encoding_dims=3*[256]):
     return model
 
 
-def MDA(input_dims=6*[6400], encoding_dims=3*[512]):
+def MDA(input_dims, encoding_dims):
     """Multi-modal autoencoder.
     """
     # input layers
@@ -81,7 +81,7 @@ def MDA(input_dims=6*[6400], encoding_dims=3*[512]):
                                    activation='sigmoid')(hidden_layers[j]))
 
     # autoencoder model
-    sgd = SGD(lr=0.2, momentum=0.95, decay=0.0, nesterov=False)
+    sgd = SGD(lr=0.01, momentum=0.9, decay=0.0, nesterov=False)
     model = Model(inputs=input_layers, outputs=output_layers)
     model.compile(optimizer=sgd, loss='binary_crossentropy')
     print(model.summary())
