@@ -3,27 +3,29 @@ from keras.layers import Dense, Input, Concatenate
 from keras.models import Model
 from keras.regularizers import l1
 from typing import Union, List
+from abc import ABC, abstractmethod
 
-__all__ = ['Autoencoder']
+__all__ = ['Autoencoder', 'DeepAutoencoder', 'MultimodalAutoencoder']
 
 
-class Autoencoder:
-    '''Autoencoder class.
+class AbstractAutoencoder(ABC):
+    '''AbstractAutoencoder class.
 
-    Autoencoder architectures:
-     - Shallow
-     - Deep
-       - Multimodal
+    Autoencoder architectures that inherit from AbstractAutoencoder:
+     - Autoencoder
+     - DeepAutoencoder
+     - MultimodalAutoencoder
 
     Autoencoder variants (available for all architectures):
      - Sparse
      - Denoising
 
     # Arguments
-        x_train: np.ndarray (List[np.ndarray] if Multimodal), training data
-        x_val: np.ndarray (List[np.ndarray] if Multimodal), validation data
-        embedding_size: int (optional), size of embedding
-        layers: List[int] (optional), layer sizes if Deep
+        x_train: Union[np.ndarray, List[np.ndarray]], training data
+        x_val: Union[np.ndarray, List[np.ndarray]], validation data
+        embedding_size: int, size of embedding
+        layers: List[int], layer sizes
+
         sparse: float (optional), l1 regularization factor if Sparse
         denoising: float (optional), noise factor if Denoising
         epochs: int, number of epochs to train for
@@ -34,10 +36,13 @@ class Autoencoder:
         verbose: int, logging verbosity
     '''
     def __init__(self,
-                 x_train: Union[np.ndarray, List[np.ndarray]],
-                 x_val: Union[np.ndarray, List[np.ndarray]],
+                 # Optional args in subclasses
                  embedding_size: Union[int, None] = None,
                  layers: Union[List[int], None] = None,
+                 *,
+                 # Required args in subclasses
+                 x_train: Union[np.ndarray, List[np.ndarray]],
+                 x_val: Union[np.ndarray, List[np.ndarray]],
                  sparse: Union[float, None] = None,
                  denoising: Union[float, None] = None,
                  epochs: int = 1,
@@ -58,17 +63,23 @@ class Autoencoder:
         self.optimizer = optimizer
         self.loss = loss
         self.verbose = verbose
-        self._param_check()
+        self.param_check()
+        super().__init__()
 
     def train(self):
         '''Train the autoencoder.
         '''
-        self._build()
+        self.build()
         self.autoencoder.fit(
             self.x_train_in, self.x_train,
             validation_data=(self.x_val_in, self.x_val),
             epochs=self.epochs, batch_size=self.batch_size, shuffle=True,
             verbose=self.verbose)
+
+    def summary(self):
+        '''Summary of the autoencoder's layers.
+        '''
+        return self.autoencoder.summary()
 
     def predict(self, x: Union[np.ndarray, List[np.ndarray]]
                 ) -> Union[np.ndarray, List[np.ndarray]]:
@@ -81,19 +92,10 @@ class Autoencoder:
         '''
         return self.encoder.predict(x)
 
-    def _param_check(self):
+    def param_check(self):
         '''Check validity of function arguments.
         '''
-        xs = [getattr(self, x) for x in ('x_train', 'x_val')]
-        if all(isinstance(x, list) for x in xs):
-            if not all(isinstance(x_i, np.ndarray) for x in xs for x_i in x):
-                raise TypeError('`x`s must be List[np.ndarray] for Multimodal')
-            if not self.layers:
-                raise TypeError(
-                    'Multimodal is only implemented for Deep autoencoders',
-                    '`layer` must be provided')
-        elif not all(isinstance(x, np.ndarray) for x in xs):
-            raise TypeError('`x`s must be np.ndarray or List[np.ndarray]')
+        self._param_check()
 
         if all((self.embedding_size is None, self.layers is None)):
             raise ValueError(
@@ -102,44 +104,154 @@ class Autoencoder:
             raise ValueError(
                 'Cannot specify both: `embdding_size` and `layers`')
 
-        if self.layers and not len(self.layers) > 1:
-            raise ValueError('`len(layers)` must be > 1')
-
         if self.denoising is None:
             self.x_train_in = self.x_train
             self.x_val_in = self.x_val
         elif 0 <= self.denoising <= 1:
-            self.x_train_in = add_noise(self.x_train, self.denoising)
-            self.x_val_in = add_noise(self.x_val, self.denoising)
+            self.x_train_in = self.add_noise(self.x_train)
+            self.x_val_in = self.add_noise(self.x_val)
         else:
             raise ValueError('`denoising` must be between 0 and 1')
 
-    def _build(self):
+    @abstractmethod
+    def _param_check(self):
+        '''Abstract param_check method.
+        '''
+        pass
+
+    def build(self):
         '''Builds the autoencoder.
         '''
-        if self.layers:
-            if isinstance(self.x_train, np.ndarray):
-                self._build_deep()
-            elif isinstance(self.x_train, list):
-                self._build_multimodal()
-        else:
-            self._build_shallow()
-
+        self._build()
         self.autoencoder = Model(self.input, self.decoded)
         self.encoder = Model(self.input, self.encoded)
         self.autoencoder.compile(self.optimizer, self.loss)
 
-    def _build_shallow(self):
-        '''Builds a shallow autoencoder.
+    @abstractmethod
+    def _build(self):
+        '''Abstract build method.
+
+        Must set the following attributes:
+         - input
+         - encoded
+         - decoded
         '''
+        pass
+
+    def _encoder_layer(self, embedding_size: int, previous_layer: Dense):
+        '''Generates the middle encoding layer.
+
+        Optionally applies l1 regulation for sparsity.
+        '''
+        if self.sparse is None:
+            return Dense(embedding_size,
+                         activation=self.activation)(previous_layer)
+        else:
+            return Dense(embedding_size, activation=self.activation,
+                         activity_regularizer=l1(self.sparse))(previous_layer)
+
+    def add_noise(self, X):
+        '''Add noise to `X`.
+        '''
+        def _add_noise(x):
+            x_n = x + self.denoising * np.random.normal(size=x.shape)
+            return np.clip(x_n, 0., 1.)
+
+        try:
+            return _add_noise(X)
+        except AttributeError:  # Multimodal
+            return [_add_noise(X_i) for X_i in X]
+
+
+class Autoencoder(AbstractAutoencoder):
+    '''Autoencoder.
+
+    # Arguments
+        x_train: np.ndarray, training data
+        x_val: np.ndarray, validation data
+        embedding_size: int, size of embedding
+        sparse: float (optional), l1 regularization factor if Sparse
+        denoising: float (optional), noise factor if Denoising
+        epochs: int, number of epochs to train for
+        batch_size: int, batch size
+        activation: str, activation function
+        optimizer: str, training optimizer
+        loss: str, loss function
+        verbose: int, logging verbosity
+    '''
+    def __init__(self,
+                 x_train: np.ndarray,
+                 x_val: np.ndarray,
+                 embedding_size: int,
+                 sparse: Union[float, None] = None,
+                 denoising: Union[float, None] = None,
+                 epochs: int = 1,
+                 batch_size: int = 128,
+                 activation: str = 'relu',
+                 optimizer: str = 'adam',
+                 loss: str = 'binary_crossentropy',
+                 verbose: int = 1):
+        super().__init__(
+            embedding_size=embedding_size,
+            x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
+            epochs=epochs, batch_size=batch_size, activation=activation,
+            optimizer=optimizer, loss=loss, verbose=verbose)
+
+    def _param_check(self):
+        if not all(isinstance(x, np.ndarray)
+                   for x in (self.x_train, self.x_val)):
+            raise TypeError('`x`s must be np.ndarray or List[np.ndarray]')
+
+    def _build(self):
         self.input = Input(shape=(self.x_train.shape[1],))
         self.encoded = self._encoder_layer(self.embedding_size, self.input)
         self.decoded = Dense(self.x_train.shape[1],
                              activation='sigmoid')(self.encoded)
 
-    def _build_deep(self):
-        '''Builds a deep autoencoder.
-        '''
+
+class DeepAutoencoder(AbstractAutoencoder):
+    '''Deep autoencoder.
+
+    # Arguments
+        x_train: np.ndarray, training data
+        x_val: np.ndarray, validation data
+        layers: List[int], layers sizes
+        sparse: float (optional), l1 regularization factor if Sparse
+        denoising: float (optional), noise factor if Denoising
+        epochs: int, number of epochs to train for
+        batch_size: int, batch size
+        activation: str, activation function
+        optimizer: str, training optimizer
+        loss: str, loss function
+        verbose: int, logging verbosity
+    '''
+    def __init__(self,
+                 x_train: np.ndarray,
+                 x_val: np.ndarray,
+                 layers: List[int],
+                 sparse: Union[float, None] = None,
+                 denoising: Union[float, None] = None,
+                 epochs: int = 1,
+                 batch_size: int = 128,
+                 activation: str = 'relu',
+                 optimizer: str = 'adam',
+                 loss: str = 'binary_crossentropy',
+                 verbose: int = 1):
+        super().__init__(
+            layers=layers,
+            x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
+            epochs=epochs, batch_size=batch_size, activation=activation,
+            optimizer=optimizer, loss=loss, verbose=verbose)
+
+    def _param_check(self):
+        if not all(isinstance(x, np.ndarray)
+                   for x in (self.x_train, self.x_val)):
+            raise TypeError('`x_train` and `x_val` must be np.ndarray')
+
+        if not len(self.layers) > 1:
+            raise ValueError('`len(layers)` must be > 1')
+
+    def _build(self):
         self.input = Input(shape=(self.x_train.shape[1],))
 
         hidden = self.input
@@ -155,9 +267,51 @@ class Autoencoder:
         self.decoded = Dense(self.x_train.shape[1],
                              activation='sigmoid')(hidden)
 
-    def _build_multimodal(self):
-        '''Builds a multimodal deep autoencoder.
-        '''
+
+class MultimodalAutoencoder(AbstractAutoencoder):
+    '''Multimodal deep autoencoder.
+
+    # Arguments
+        x_train: List[np.ndarray], training data
+        x_val: List[np.ndarray], validation data
+        layers: List[int], layers sizes
+        sparse: float (optional), l1 regularization factor if Sparse
+        denoising: float (optional), noise factor if Denoising
+        epochs: int, number of epochs to train for
+        batch_size: int, batch size
+        activation: str, activation function
+        optimizer: str, training optimizer
+        loss: str, loss function
+        verbose: int, logging verbosity
+    '''
+    def __init__(self,
+                 x_train: List[np.ndarray],
+                 x_val: List[np.ndarray],
+                 layers: List[int],
+                 sparse: Union[float, None] = None,
+                 denoising: Union[float, None] = None,
+                 epochs: int = 1,
+                 batch_size: int = 128,
+                 activation: str = 'relu',
+                 optimizer: str = 'adam',
+                 loss: str = 'binary_crossentropy',
+                 verbose: int = 1):
+        super().__init__(
+            layers=layers,
+            x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
+            epochs=epochs, batch_size=batch_size, activation=activation,
+            optimizer=optimizer, loss=loss, verbose=verbose)
+
+    def _param_check(self):
+        xs = (self.x_train, self.x_val)
+        if not (all(isinstance(x, list) for x in xs) and
+                all(isinstance(y, np.ndarray) for x in xs for y in x)):
+            raise TypeError('`x_train` and `x_val` must be List[np.ndarray]')
+
+        if not len(self.layers) > 1:
+            raise ValueError('`len(layers)` must be > 1')
+
+    def _build(self):
         self.input = [Input(shape=(self.x_train[i].shape[1],))
                       for i in range(len(self.x_train))]
 
@@ -186,28 +340,3 @@ class Autoencoder:
         self.decoded = [
             Dense(self.x_train[i].shape[1], activation='sigmoid')(hidden[i])
             for i in range(len(self.x_train))]
-
-    def _encoder_layer(self, embedding_size: int, previous_layer: Dense):
-        '''Generates the middle encoding layer.
-
-        Optionally applies l1 regulation for sparsity.
-        '''
-        if self.sparse is None:
-            return Dense(embedding_size,
-                         activation=self.activation)(previous_layer)
-        else:
-            return Dense(embedding_size, activation=self.activation,
-                         activity_regularizer=l1(self.sparse))(previous_layer)
-
-
-def add_noise(X, noise_factor):
-    '''Add noise to training data for denoising.
-    '''
-    def _add_noise(x):
-        x_n = x + noise_factor * np.random.normal(size=x.shape)
-        return np.clip(x_n, 0., 1.)
-
-    try:
-        return _add_noise(X)
-    except AttributeError:  # Multimodal
-        return [_add_noise(X_i) for X_i in X]
