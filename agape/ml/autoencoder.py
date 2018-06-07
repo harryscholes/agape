@@ -4,10 +4,10 @@ from keras.models import Model
 from keras.regularizers import l1
 from typing import Union, List
 
-__all__ = ['AutoEncoder']
+__all__ = ['Autoencoder']
 
 
-class AutoEncoder:
+class Autoencoder:
     '''Autoencoder class.
 
     Autoencoder architectures:
