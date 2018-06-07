@@ -11,18 +11,18 @@ __all__ = ['Autoencoder', 'DeepAutoencoder', 'MultimodalAutoencoder']
 class AbstractAutoencoder(ABC):
     '''AbstractAutoencoder class.
 
-    Autoencoder architectures that inherit from AbstractAutoencoder:
-     - Autoencoder
-     - DeepAutoencoder
-     - MultimodalAutoencoder
+    # Autoencoder architectures that inherit from AbstractAutoencoder
+        Autoencoder
+        DeepAutoencoder
+        MultimodalAutoencoder
 
-    Autoencoder variants (available for all architectures):
-     - Sparse
-     - Denoising
+    # Autoencoder variants (available for all architectures)
+        Sparse
+        Denoising
 
-    Subclasses must implement:
-     - `_param_check` to check subclass-specific arguments
-     - `_build` to build the autoencoder architecture
+    # Subclasses must implement
+        `_param_check` to check subclass-specific arguments
+        `_build` to build the autoencoder architecture
 
     # Arguments
         x_train: Union[np.ndarray, List[np.ndarray]], training data
@@ -137,9 +137,9 @@ class AbstractAutoencoder(ABC):
     @abstractmethod
     def _build(self):
         '''Must set the following attributes:
-         - input
-         - encoded
-         - decoded
+            input
+            encoded
+            decoded
         '''
         pass
 
