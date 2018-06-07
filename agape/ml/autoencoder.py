@@ -25,7 +25,8 @@ class AbstractAutoencoder(ABC):
         x_val: Union[np.ndarray, List[np.ndarray]], validation data
         embedding_size: int, size of embedding
         layers: List[int], layer sizes
-
+    '''
+    invariant_arguments = '''
         sparse: float (optional), l1 regularization factor if Sparse
         denoising: float (optional), noise factor if Denoising
         epochs: int, number of epochs to train for
@@ -35,6 +36,8 @@ class AbstractAutoencoder(ABC):
         loss: str, loss function
         verbose: int, logging verbosity
     '''
+    __doc__ += invariant_arguments[5:]
+
     def __init__(self,
                  # Optional args in subclasses
                  embedding_size: Union[int, None] = None,
@@ -170,15 +173,9 @@ class Autoencoder(AbstractAutoencoder):
         x_train: np.ndarray, training data
         x_val: np.ndarray, validation data
         embedding_size: int, size of embedding
-        sparse: float (optional), l1 regularization factor if Sparse
-        denoising: float (optional), noise factor if Denoising
-        epochs: int, number of epochs to train for
-        batch_size: int, batch size
-        activation: str, activation function
-        optimizer: str, training optimizer
-        loss: str, loss function
-        verbose: int, logging verbosity
     '''
+    __doc__ += AbstractAutoencoder.invariant_arguments[5:]
+
     def __init__(self,
                  x_train: np.ndarray,
                  x_val: np.ndarray,
@@ -216,15 +213,9 @@ class DeepAutoencoder(AbstractAutoencoder):
         x_train: np.ndarray, training data
         x_val: np.ndarray, validation data
         layers: List[int], layers sizes
-        sparse: float (optional), l1 regularization factor if Sparse
-        denoising: float (optional), noise factor if Denoising
-        epochs: int, number of epochs to train for
-        batch_size: int, batch size
-        activation: str, activation function
-        optimizer: str, training optimizer
-        loss: str, loss function
-        verbose: int, logging verbosity
     '''
+    __doc__ += AbstractAutoencoder.invariant_arguments[5:]
+
     def __init__(self,
                  x_train: np.ndarray,
                  x_val: np.ndarray,
@@ -275,15 +266,9 @@ class MultimodalAutoencoder(AbstractAutoencoder):
         x_train: List[np.ndarray], training data
         x_val: List[np.ndarray], validation data
         layers: List[int], layers sizes
-        sparse: float (optional), l1 regularization factor if Sparse
-        denoising: float (optional), noise factor if Denoising
-        epochs: int, number of epochs to train for
-        batch_size: int, batch size
-        activation: str, activation function
-        optimizer: str, training optimizer
-        loss: str, loss function
-        verbose: int, logging verbosity
     '''
+    __doc__ += AbstractAutoencoder.invariant_arguments[5:]
+
     def __init__(self,
                  x_train: List[np.ndarray],
                  x_val: List[np.ndarray],
