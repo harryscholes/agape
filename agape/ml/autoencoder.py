@@ -96,7 +96,7 @@ class AbstractAutoencoder(ABC):
     def train(self):
         '''Train the autoencoder.
         '''
-        self.autoencoder.fit(
+        self.history = self.autoencoder.fit(
             self.x_train_in, self.x_train,
             validation_data=(self.x_val_in, self.x_val),
             epochs=self.epochs, batch_size=self.batch_size, shuffle=True,
