@@ -179,7 +179,7 @@ class AbstractAutoencoder(ABC):
     def _encoder_layer(self, embedding_size: int, previous_layer: Dense):
         '''Generates the middle encoding layer.
 
-        Optionally applies l1 regulation for sparsity.
+        Optionally applies l1 regularisation for sparsity.
         '''
         if self.sparse is None:
             return Dense(embedding_size,
