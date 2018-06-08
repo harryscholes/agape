@@ -36,6 +36,7 @@ class AbstractAutoencoder(ABC):
         Denoising
 
     # Subclasses must implement
+        `__init__`
         `_compile_autoencoder` for a particular architecture
         `_check_autoencoder_parameters` for the parameters of this architecture
 
@@ -63,10 +64,8 @@ class AbstractAutoencoder(ABC):
                  x_val: Union[np.ndarray, List[np.ndarray]],
                  sparse: Union[float, None] = None,
                  denoising: Union[float, None] = None,
-                 epochs: int = 1,
-                 batch_size: int = 128,
-                 activation: str = 'relu',
-                 optimizer: str = 'adam',
+                 epochs: int = 1, batch_size: int = 128,
+                 activation: str = 'relu', optimizer: str = 'adam',
                  loss: str = 'binary_crossentropy',
                  early_stopping: Union[Tuple[int, float], None] = None,
                  verbose: int = 1):
@@ -218,17 +217,11 @@ class Autoencoder(AbstractAutoencoder):
     '''
     __doc__ += AbstractAutoencoder.generic_arguments[5:]
 
-    def __init__(self,
-                 x_train: np.ndarray,
-                 x_val: np.ndarray,
-                 embedding_size: int,
-                 sparse: Union[float, None] = None,
-                 denoising: Union[float, None] = None,
-                 epochs: int = 1,
-                 batch_size: int = 128,
-                 activation: str = 'relu',
-                 optimizer: str = 'adam',
-                 loss: str = 'binary_crossentropy',
+    def __init__(self, x_train: np.ndarray, x_val: np.ndarray,
+                 embedding_size: int, sparse: Union[float, None] = None,
+                 denoising: Union[float, None] = None, epochs: int = 1,
+                 batch_size: int = 128, activation: str = 'relu',
+                 optimizer: str = 'adam', loss: str = 'binary_crossentropy',
                  early_stopping: Union[Tuple[int, float], None] = None,
                  verbose: int = 1):
         self.embedding_size = embedding_size
@@ -264,17 +257,11 @@ class DeepAutoencoder(AbstractAutoencoder):
     '''
     __doc__ += AbstractAutoencoder.generic_arguments[5:]
 
-    def __init__(self,
-                 x_train: np.ndarray,
-                 x_val: np.ndarray,
-                 layers: List[int],
-                 sparse: Union[float, None] = None,
-                 denoising: Union[float, None] = None,
-                 epochs: int = 1,
-                 batch_size: int = 128,
-                 activation: str = 'relu',
-                 optimizer: str = 'adam',
-                 loss: str = 'binary_crossentropy',
+    def __init__(self, x_train: np.ndarray, x_val: np.ndarray,
+                 layers: List[int], sparse: Union[float, None] = None,
+                 denoising: Union[float, None] = None, epochs: int = 1,
+                 batch_size: int = 128, activation: str = 'relu',
+                 optimizer: str = 'adam', loss: str = 'binary_crossentropy',
                  early_stopping: Union[Tuple[int, float], None] = None,
                  verbose: int = 1):
         self.layers = layers
@@ -319,17 +306,12 @@ class MultimodalAutoencoder(AbstractAutoencoder):
     '''
     __doc__ += AbstractAutoencoder.generic_arguments[5:]
 
-    def __init__(self,
-                 x_train: List[np.ndarray],
-                 x_val: List[np.ndarray],
-                 layers: List[int],
-                 sparse: Union[float, None] = None,
-                 denoising: Union[float, None] = None,
-                 epochs: int = 1,
-                 batch_size: int = 128,
-                 activation: str = 'relu',
-                 optimizer: str = 'adam',
-                 loss: str = 'binary_crossentropy',
+    def __init__(self, x_train: np.ndarray, x_val: np.ndarray,
+                 layers: List[int], sparse: Union[float, None] = None,
+                 denoising: Union[float, None] = None, epochs: int = 1,
+                 batch_size: int = 128, activation: str = 'relu',
+                 optimizer: str = 'adam', loss: str = 'binary_crossentropy',
+                 early_stopping: Union[Tuple[int, float], None] = None,
                  verbose: int = 1):
         self.layers = layers
         super().__init__(
