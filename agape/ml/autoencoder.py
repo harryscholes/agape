@@ -16,7 +16,8 @@ import numpy as np
 from keras.layers import Dense, Input, Concatenate
 from keras.models import Model
 from keras.regularizers import l1
-from typing import Union, List
+from keras.callbacks import EarlyStopping
+from typing import Union, List, Tuple
 from abc import ABC, abstractmethod
 
 __all__ = ['Autoencoder', 'DeepAutoencoder', 'MultimodalAutoencoder']
@@ -52,16 +53,12 @@ class AbstractAutoencoder(ABC):
         activation: str, activation function
         optimizer: str, training optimizer
         loss: str, loss function
+        early_stopping: Tuple[int, float], of the form (patience, min_delta)
         verbose: int, logging verbosity
     '''
     __doc__ += generic_arguments[5:]
 
-    def __init__(self,
-                 # Subclass-specific arguments
-                 embedding_size: Union[int, None] = None,
-                 layers: Union[List[int], None] = None,
-                 *,
-                 # Generic arguments
+    def __init__(self, *,
                  x_train: Union[np.ndarray, List[np.ndarray]],
                  x_val: Union[np.ndarray, List[np.ndarray]],
                  sparse: Union[float, None] = None,
@@ -71,11 +68,10 @@ class AbstractAutoencoder(ABC):
                  activation: str = 'relu',
                  optimizer: str = 'adam',
                  loss: str = 'binary_crossentropy',
+                 early_stopping: Union[Tuple[int, float], None] = None,
                  verbose: int = 1):
         self.x_train = x_train
         self.x_val = x_val
-        self.embedding_size = embedding_size
-        self.layers = layers
         self.sparse = sparse
         self.denoising = denoising
         self.epochs = epochs
@@ -83,6 +79,7 @@ class AbstractAutoencoder(ABC):
         self.activation = activation
         self.optimizer = optimizer
         self.loss = loss
+        self.early_stopping = early_stopping
         self.verbose = verbose
         self._check_parameters()
         self._compile()
@@ -96,11 +93,16 @@ class AbstractAutoencoder(ABC):
     def train(self):
         '''Train the autoencoder.
         '''
+        if self.early_stopping:
+            callbacks = [EarlyStopping(patience=self.early_stopping[0],
+                                       min_delta=self.early_stopping[1])]
+        else:
+            callbacks = None
         self.history = self.autoencoder.fit(
             self.x_train_in, self.x_train,
             validation_data=(self.x_val_in, self.x_val),
             epochs=self.epochs, batch_size=self.batch_size, shuffle=True,
-            verbose=self.verbose)
+            callbacks=callbacks, verbose=self.verbose)
 
     def summary(self):
         '''Summary of the autoencoder architecture.
@@ -145,13 +147,6 @@ class AbstractAutoencoder(ABC):
         try:
             self._check_autoencoder_parameters()
 
-            if all((self.embedding_size is None, self.layers is None)):
-                raise ValueError(
-                    'Cannot both be None: `embdding_size` and `layers`')
-            if not any((self.embedding_size is None, self.layers is None)):
-                raise ValueError(
-                    'Cannot specify both: `embdding_size` and `layers`')
-
             if self.denoising is None:
                 self.x_train_in = self.x_train
                 self.x_val_in = self.x_val
@@ -160,6 +155,15 @@ class AbstractAutoencoder(ABC):
                 self.x_val_in = self._add_noise(self.x_val)
             else:
                 raise ValueError('`denoising` must be between 0 and 1')
+
+            if isinstance(self.early_stopping, tuple):
+                if not all((isinstance(self.early_stopping[0], int),
+                            isinstance(self.early_stopping[1], float))):
+                    raise TypeError(
+                        '`early_stopping` must be Tuple[int, float]')
+            elif self.early_stopping is not None:
+                raise TypeError(
+                    '`early_stopping must be Tuple[int, float] or None')
         except Exception as e:
             e.args = (f'Parameter error. {e.args[0]}',)
             raise
@@ -225,17 +229,23 @@ class Autoencoder(AbstractAutoencoder):
                  activation: str = 'relu',
                  optimizer: str = 'adam',
                  loss: str = 'binary_crossentropy',
+                 early_stopping: Union[Tuple[int, float], None] = None,
                  verbose: int = 1):
+        self.embedding_size = embedding_size
         super().__init__(
-            embedding_size=embedding_size,
             x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
             epochs=epochs, batch_size=batch_size, activation=activation,
-            optimizer=optimizer, loss=loss, verbose=verbose)
+            optimizer=optimizer, loss=loss, early_stopping=early_stopping,
+            verbose=verbose)
 
     def _check_autoencoder_parameters(self):
         if not all(isinstance(x, np.ndarray)
                    for x in (self.x_train, self.x_val)):
             raise TypeError('`x`s must be np.ndarray or List[np.ndarray]')
+
+        if not (isinstance(self.embedding_size, int)
+                and self.embedding_size > 0):
+            raise TypeError('`embedding_size` must be a positive int')
 
     def _compile_autoencoder(self):
         self.input = Input(shape=(self.x_train.shape[1],))
@@ -265,12 +275,14 @@ class DeepAutoencoder(AbstractAutoencoder):
                  activation: str = 'relu',
                  optimizer: str = 'adam',
                  loss: str = 'binary_crossentropy',
+                 early_stopping: Union[Tuple[int, float], None] = None,
                  verbose: int = 1):
+        self.layers = layers
         super().__init__(
-            layers=layers,
             x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
             epochs=epochs, batch_size=batch_size, activation=activation,
-            optimizer=optimizer, loss=loss, verbose=verbose)
+            optimizer=optimizer, loss=loss, early_stopping=early_stopping,
+            verbose=verbose, **kwargs)
 
     def _check_autoencoder_parameters(self):
         if not all(isinstance(x, np.ndarray)
@@ -319,8 +331,8 @@ class MultimodalAutoencoder(AbstractAutoencoder):
                  optimizer: str = 'adam',
                  loss: str = 'binary_crossentropy',
                  verbose: int = 1):
+        self.layers = layers
         super().__init__(
-            layers=layers,
             x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
             epochs=epochs, batch_size=batch_size, activation=activation,
             optimizer=optimizer, loss=loss, verbose=verbose)
