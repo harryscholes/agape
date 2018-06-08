@@ -59,6 +59,7 @@ class AbstractAutoencoder(ABC):
     '''
     __doc__ += generic_arguments[5:]
 
+    @abstractmethod
     def __init__(self, *,
                  x_train: Union[np.ndarray, List[np.ndarray]],
                  x_val: Union[np.ndarray, List[np.ndarray]],
