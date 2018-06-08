@@ -1,5 +1,7 @@
-'''Flexible classes to build and train autoencoders, which can be used to
-generate low-dimensional embeddings.
+'''Flexible classes to build and train a variety of autoencoder architectures.
+
+New autoencoder architectures can be implemented easily by inheriting from the
+AbstractAutoencoder class.
 
 # Autoencoder architectures
     Autoencoder: one hidden layer
@@ -33,8 +35,8 @@ class AbstractAutoencoder(ABC):
         Denoising
 
     # Subclasses must implement
-        `_param_check` to check subclass-specific arguments
-        `_build` to build the autoencoder architecture
+        `_compile_autoencoder` for a particular architecture
+        `_check_autoencoder_parameters` for the parameters of this architecture
 
     # Arguments
         x_train: Union[np.ndarray, List[np.ndarray]], training data
@@ -82,8 +84,14 @@ class AbstractAutoencoder(ABC):
         self.optimizer = optimizer
         self.loss = loss
         self.verbose = verbose
-        self.param_check()
-        self.build()
+        self._check_parameters()
+        self._compile()
+
+    # The API exposes the following methods:
+    # `train`   : trains the autoencoder
+    # `summary` : prints a summary of the architecture
+    # `predict` : returns predictions
+    # `encode`  : returns embeddings
 
     def train(self):
         '''Train the autoencoder.
@@ -95,7 +103,7 @@ class AbstractAutoencoder(ABC):
             verbose=self.verbose)
 
     def summary(self):
-        '''Summary of the autoencoder's layers.
+        '''Summary of the autoencoder architecture.
         '''
         return self.autoencoder.summary()
 
@@ -110,49 +118,63 @@ class AbstractAutoencoder(ABC):
         '''
         return self.encoder.predict(x)
 
-    def param_check(self):
-        '''Check validity of function arguments.
-        '''
-        self._param_check()
-
-        if all((self.embedding_size is None, self.layers is None)):
-            raise ValueError(
-                'Cannot both be None: `embdding_size` and `layers`')
-        if not any((self.embedding_size is None, self.layers is None)):
-            raise ValueError(
-                'Cannot specify both: `embdding_size` and `layers`')
-
-        if self.denoising is None:
-            self.x_train_in = self.x_train
-            self.x_val_in = self.x_val
-        elif 0 <= self.denoising <= 1:
-            self.x_train_in = self._add_noise(self.x_train)
-            self.x_val_in = self._add_noise(self.x_val)
-        else:
-            raise ValueError('`denoising` must be between 0 and 1')
+    # Abstract methods that must be implemented by each subclass
 
     @abstractmethod
-    def _param_check(self):
-        '''Must check subclass-specific parameters.
+    def _check_autoencoder_parameters(self):
+        '''Check architecture-specific parameters.
         '''
         pass
 
-    def build(self):
-        '''Builds the autoencoder.
-        '''
-        self._build()
-        self.autoencoder = Model(self.input, self.decoded)
-        self.encoder = Model(self.input, self.encoded)
-        self.autoencoder.compile(self.optimizer, self.loss)
-
     @abstractmethod
-    def _build(self):
-        '''Must set the following attributes:
+    def _compile_autoencoder(self):
+        '''Compile a particular autoencoder architecture.
+
+        Must set the following attributes:
             input
             encoded
             decoded
         '''
         pass
+
+    # Private methods
+
+    def _check_parameters(self):
+        '''Check the validity of model parameters (function arguments).
+        '''
+        try:
+            self._check_autoencoder_parameters()
+
+            if all((self.embedding_size is None, self.layers is None)):
+                raise ValueError(
+                    'Cannot both be None: `embdding_size` and `layers`')
+            if not any((self.embedding_size is None, self.layers is None)):
+                raise ValueError(
+                    'Cannot specify both: `embdding_size` and `layers`')
+
+            if self.denoising is None:
+                self.x_train_in = self.x_train
+                self.x_val_in = self.x_val
+            elif 0 <= self.denoising <= 1:
+                self.x_train_in = self._add_noise(self.x_train)
+                self.x_val_in = self._add_noise(self.x_val)
+            else:
+                raise ValueError('`denoising` must be between 0 and 1')
+        except Exception as e:
+            e.args = (f'Parameter error. {e.args[0]}',)
+            raise
+
+    def _compile(self):
+        '''Compiles the autoencoder.
+        '''
+        try:
+            self._compile_autoencoder()
+            self.autoencoder = Model(self.input, self.decoded)
+            self.encoder = Model(self.input, self.encoded)
+            self.autoencoder.compile(self.optimizer, self.loss)
+        except AttributeError as e:
+            e.args = (f'Subclass not implemented correctly. {e.args[0]}',)
+            raise
 
     def _encoder_layer(self, embedding_size: int, previous_layer: Dense):
         '''Generates the middle encoding layer.
@@ -166,17 +188,19 @@ class AbstractAutoencoder(ABC):
             return Dense(embedding_size, activation=self.activation,
                          activity_regularizer=l1(self.sparse))(previous_layer)
 
-    def _add_noise(self, X):
-        '''Add noise to `X`.
+    def _add_noise(self, x):
+        '''Add noise to `x`.
+
+        Noise factor is determined by 0 <= `self.denoising` <= 1.
         '''
-        def __add_noise(x):
+        def f(x):
             x_n = x + self.denoising * np.random.normal(size=x.shape)
             return np.clip(x_n, 0., 1.)
 
         try:
-            return __add_noise(X)
+            return f(x)
         except AttributeError:  # Multimodal
-            return [__add_noise(X_i) for X_i in X]
+            return [f(x_i) for x_i in x]
 
 
 class Autoencoder(AbstractAutoencoder):
@@ -207,12 +231,12 @@ class Autoencoder(AbstractAutoencoder):
             epochs=epochs, batch_size=batch_size, activation=activation,
             optimizer=optimizer, loss=loss, verbose=verbose)
 
-    def _param_check(self):
+    def _check_autoencoder_parameters(self):
         if not all(isinstance(x, np.ndarray)
                    for x in (self.x_train, self.x_val)):
             raise TypeError('`x`s must be np.ndarray or List[np.ndarray]')
 
-    def _build(self):
+    def _compile_autoencoder(self):
         self.input = Input(shape=(self.x_train.shape[1],))
         self.encoded = self._encoder_layer(self.embedding_size, self.input)
         self.decoded = Dense(self.x_train.shape[1],
@@ -247,7 +271,7 @@ class DeepAutoencoder(AbstractAutoencoder):
             epochs=epochs, batch_size=batch_size, activation=activation,
             optimizer=optimizer, loss=loss, verbose=verbose)
 
-    def _param_check(self):
+    def _check_autoencoder_parameters(self):
         if not all(isinstance(x, np.ndarray)
                    for x in (self.x_train, self.x_val)):
             raise TypeError('`x_train` and `x_val` must be np.ndarray')
@@ -255,16 +279,16 @@ class DeepAutoencoder(AbstractAutoencoder):
         if not len(self.layers) > 1:
             raise ValueError('`len(layers)` must be > 1')
 
-    def _build(self):
+    def _compile_autoencoder(self):
         self.input = Input(shape=(self.x_train.shape[1],))
 
-        hidden = self.input
+        hidden = self.input  # For looping over all hidden layers easily
         for i in range(len(self.layers) - 1):
             hidden = Dense(self.layers[i], activation=self.activation)(hidden)
 
         self.encoded = self._encoder_layer(self.layers[-1], hidden)
 
-        hidden = self.encoded
+        hidden = self.encoded  # For looping over all hidden layers easily
         for i in range(len(self.layers) - 2, -1, -1):
             hidden = Dense(self.layers[i], activation=self.activation)(hidden)
 
@@ -300,7 +324,7 @@ class MultimodalAutoencoder(AbstractAutoencoder):
             epochs=epochs, batch_size=batch_size, activation=activation,
             optimizer=optimizer, loss=loss, verbose=verbose)
 
-    def _param_check(self):
+    def _check_autoencoder_parameters(self):
         xs = (self.x_train, self.x_val)
         if not (all(isinstance(x, list) for x in xs) and
                 all(isinstance(y, np.ndarray) for x in xs for y in x)):
@@ -309,32 +333,32 @@ class MultimodalAutoencoder(AbstractAutoencoder):
         if not len(self.layers) > 1:
             raise ValueError('`len(layers)` must be > 1')
 
-    def _build(self):
+    def _compile_autoencoder(self):
         self.input = [Input(shape=(self.x_train[i].shape[1],))
                       for i in range(len(self.x_train))]
-
+        # Each of the m input modes goes through its own dense layer
         hidden = [Dense(self.layers[0], activation=self.activation)(input)
                   for input in self.input]
-
+        # These m dense layers are then concatenated
         concatenated = Concatenate()(hidden)
-
-        hidden = concatenated
+        # Standard autoencoder architecture
+        hidden = concatenated  # For looping over all hidden layers easily
         for i in range(1, len(self.layers) - 1):
             hidden = Dense(self.layers[i], activation=self.activation)(hidden)
 
         self.encoded = self._encoder_layer(self.layers[-1], hidden)
 
-        hidden = self.encoded
+        hidden = self.encoded  # For looping over all hidden layers easily
         for i in range(len(self.layers) - 2, 0, -1):
             hidden = Dense(self.layers[i], activation=self.activation)(hidden)
-
+        # Regenerate the concatenated layer
         concatenated = Dense(self.layers[0] * len(self.x_train),
                              activation=self.activation)(hidden)
-
+        # Split the concatenated layer into m dense layers
         hidden = [
             Dense(self.layers[0], activation=self.activation)(concatenated)
             for i in range(len(self.x_train))]
-
+        # Regenerate the m input modes
         self.decoded = [
             Dense(self.x_train[i].shape[1], activation='sigmoid')(hidden[i])
             for i in range(len(self.x_train))]
