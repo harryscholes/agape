@@ -171,7 +171,8 @@ class AbstractAutoencoder(ABC):
             self._compile_autoencoder()
             self.autoencoder = Model(self.input, self.decoded)
             self.encoder = Model(self.input, self.encoded)
-            self.autoencoder.compile(self.optimizer, self.loss)
+            self.autoencoder.compile(self.optimizer, self.loss,
+                                     metrics=['accuracy'])
         except AttributeError as e:
             e.args = (f'Subclass not implemented correctly. {e.args[0]}',)
             raise
