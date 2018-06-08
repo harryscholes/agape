@@ -341,7 +341,7 @@ class MultimodalAutoencoder(AbstractAutoencoder):
                   for input in self.input]
         # These m dense layers are then concatenated
         concatenated = Concatenate()(hidden)
-        # Standard autoencoder architecture
+        # Standard deep autoencoder architecture
         hidden = concatenated  # For looping over all hidden layers easily
         for i in range(1, len(self.layers) - 1):
             hidden = Dense(self.layers[i], activation=self.activation)(hidden)
