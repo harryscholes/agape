@@ -37,8 +37,8 @@ class AbstractAutoencoder(ABC):
 
     # Subclasses must implement
         `__init__`
-        `_compile_autoencoder` for a particular architecture
-        `_check_autoencoder_parameters` for the parameters of this architecture
+        `_compile` to compile the architecture
+        `_check_parameters` to check its parameters
 
     # Arguments
         x_train: Union[np.ndarray, List[np.ndarray]], training data
@@ -123,56 +123,32 @@ class AbstractAutoencoder(ABC):
     # Abstract methods that must be implemented by each subclass
 
     @abstractmethod
-    def _check_autoencoder_parameters(self):
-        '''Check architecture-specific parameters.
-        '''
-        pass
-
-    @abstractmethod
-    def _compile_autoencoder(self):
-        '''Compile a particular autoencoder architecture.
-
-        Must set the following attributes:
-            input
-            encoded
-            decoded
-        '''
-        pass
-
-    # Private methods
-
     def _check_parameters(self):
         '''Check the validity of model parameters (function arguments).
         '''
-        try:
-            self._check_autoencoder_parameters()
+        if self.denoising is None:
+            self.x_train_in = self.x_train
+            self.x_val_in = self.x_val
+        elif 0 <= self.denoising <= 1:
+            self.x_train_in = self._add_noise(self.x_train)
+            self.x_val_in = self._add_noise(self.x_val)
+        else:
+            raise ValueError('`denoising` must be between 0 and 1')
 
-            if self.denoising is None:
-                self.x_train_in = self.x_train
-                self.x_val_in = self.x_val
-            elif 0 <= self.denoising <= 1:
-                self.x_train_in = self._add_noise(self.x_train)
-                self.x_val_in = self._add_noise(self.x_val)
-            else:
-                raise ValueError('`denoising` must be between 0 and 1')
-
-            if isinstance(self.early_stopping, tuple):
-                if not all((isinstance(self.early_stopping[0], int),
-                            isinstance(self.early_stopping[1], float))):
-                    raise TypeError(
-                        '`early_stopping` must be Tuple[int, float]')
-            elif self.early_stopping is not None:
+        if isinstance(self.early_stopping, tuple):
+            if not all((isinstance(self.early_stopping[0], int),
+                        isinstance(self.early_stopping[1], float))):
                 raise TypeError(
-                    '`early_stopping must be Tuple[int, float] or None')
-        except Exception as e:
-            e.args = (f'Parameter error. {e.args[0]}',)
-            raise
+                    '`early_stopping` must be Tuple[int, float]')
+        elif self.early_stopping is not None:
+            raise TypeError(
+                '`early_stopping must be Tuple[int, float] or None')
 
+    @abstractmethod
     def _compile(self):
         '''Compiles the autoencoder.
         '''
         try:
-            self._compile_autoencoder()
             self.autoencoder = Model(self.input, self.decoded)
             self.encoder = Model(self.input, self.encoded)
             self.autoencoder.compile(self.optimizer, self.loss,
@@ -180,6 +156,8 @@ class AbstractAutoencoder(ABC):
         except AttributeError as e:
             e.args = (f'Subclass not implemented correctly. {e.args[0]}',)
             raise
+
+    # Private methods
 
     def _encoder_layer(self, embedding_size: int, previous_layer: Dense):
         '''Generates the middle encoding layer.
@@ -232,7 +210,7 @@ class Autoencoder(AbstractAutoencoder):
             optimizer=optimizer, loss=loss, early_stopping=early_stopping,
             verbose=verbose)
 
-    def _check_autoencoder_parameters(self):
+    def _check_parameters(self):
         if not all(isinstance(x, np.ndarray)
                    for x in (self.x_train, self.x_val)):
             raise TypeError('`x`s must be np.ndarray or List[np.ndarray]')
@@ -241,11 +219,15 @@ class Autoencoder(AbstractAutoencoder):
                 and self.embedding_size > 0):
             raise TypeError('`embedding_size` must be a positive int')
 
-    def _compile_autoencoder(self):
+        super()._check_parameters()
+
+    def _compile(self):
         self.input = Input(shape=(self.x_train.shape[1],))
         self.encoded = self._encoder_layer(self.embedding_size, self.input)
         self.decoded = Dense(self.x_train.shape[1],
                              activation='sigmoid')(self.encoded)
+
+        super()._compile()
 
 
 class DeepAutoencoder(AbstractAutoencoder):
@@ -270,9 +252,9 @@ class DeepAutoencoder(AbstractAutoencoder):
             x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
             epochs=epochs, batch_size=batch_size, activation=activation,
             optimizer=optimizer, loss=loss, early_stopping=early_stopping,
-            verbose=verbose, **kwargs)
+            verbose=verbose)
 
-    def _check_autoencoder_parameters(self):
+    def _check_parameters(self):
         if not all(isinstance(x, np.ndarray)
                    for x in (self.x_train, self.x_val)):
             raise TypeError('`x_train` and `x_val` must be np.ndarray')
@@ -280,7 +262,9 @@ class DeepAutoencoder(AbstractAutoencoder):
         if not len(self.layers) > 1:
             raise ValueError('`len(layers)` must be > 1')
 
-    def _compile_autoencoder(self):
+        super()._check_parameters()
+
+    def _compile(self):
         self.input = Input(shape=(self.x_train.shape[1],))
 
         hidden = self.input  # For looping over all hidden layers easily
@@ -295,6 +279,8 @@ class DeepAutoencoder(AbstractAutoencoder):
 
         self.decoded = Dense(self.x_train.shape[1],
                              activation='sigmoid')(hidden)
+
+        super()._compile()
 
 
 class MultimodalAutoencoder(AbstractAutoencoder):
@@ -320,7 +306,7 @@ class MultimodalAutoencoder(AbstractAutoencoder):
             epochs=epochs, batch_size=batch_size, activation=activation,
             optimizer=optimizer, loss=loss, verbose=verbose)
 
-    def _check_autoencoder_parameters(self):
+    def _check_parameters(self):
         xs = (self.x_train, self.x_val)
         if not (all(isinstance(x, list) for x in xs) and
                 all(isinstance(y, np.ndarray) for x in xs for y in x)):
@@ -329,7 +315,9 @@ class MultimodalAutoencoder(AbstractAutoencoder):
         if not len(self.layers) > 1:
             raise ValueError('`len(layers)` must be > 1')
 
-    def _compile_autoencoder(self):
+        super()._check_parameters()
+
+    def _compile(self):
         self.input = [Input(shape=(self.x_train[i].shape[1],))
                       for i in range(len(self.x_train))]
         # Each of the m input modes goes through its own dense layer
@@ -358,3 +346,5 @@ class MultimodalAutoencoder(AbstractAutoencoder):
         self.decoded = [
             Dense(self.x_train[i].shape[1], activation='sigmoid')(hidden[i])
             for i in range(len(self.x_train))]
+
+        super()._compile()
