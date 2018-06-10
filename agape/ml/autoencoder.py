@@ -57,8 +57,8 @@ class AbstractAutoencoder(ABC):
         loss: str, loss function
         early_stopping: Tuple[int, float], of the form (patience, min_delta)
         verbose: int, logging verbosity
-    '''
-    __doc__ += generic_arguments[5:]
+    '''[5:]
+    __doc__ += generic_arguments
 
     @abstractmethod
     def __init__(self, *,
@@ -202,7 +202,7 @@ class Autoencoder(AbstractAutoencoder):
         x_val: np.ndarray, validation data
         embedding_size: int, size of embedding
     '''
-    __doc__ += AbstractAutoencoder.generic_arguments[5:]
+    __doc__ += AbstractAutoencoder.generic_arguments
 
     def __init__(self, x_train: np.ndarray, x_val: np.ndarray,
                  embedding_size: int, sparse: Union[float, None] = None,
@@ -246,7 +246,7 @@ class DeepAutoencoder(AbstractAutoencoder):
         x_val: np.ndarray, validation data
         layers: List[int], layers sizes
     '''
-    __doc__ += AbstractAutoencoder.generic_arguments[5:]
+    __doc__ += AbstractAutoencoder.generic_arguments
 
     def __init__(self, x_train: np.ndarray, x_val: np.ndarray,
                  layers: List[int], sparse: Union[float, None] = None,
@@ -299,7 +299,7 @@ class MultimodalAutoencoder(AbstractAutoencoder):
         x_val: List[np.ndarray], validation data
         layers: List[int], layers sizes
     '''
-    __doc__ += AbstractAutoencoder.generic_arguments[5:]
+    __doc__ += AbstractAutoencoder.generic_arguments
 
     def __init__(self, x_train: np.ndarray, x_val: np.ndarray,
                  layers: List[int], sparse: Union[float, None] = None,
