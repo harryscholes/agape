@@ -19,6 +19,7 @@ from keras.regularizers import l1
 from keras.callbacks import EarlyStopping
 from typing import Union, List, Tuple
 from abc import ABC, abstractmethod
+from numba import jit
 
 __all__ = ['Autoencoder', 'DeepAutoencoder', 'MultimodalAutoencoder']
 
@@ -176,14 +177,21 @@ class AbstractAutoencoder(ABC):
 
         Noise factor is determined by 0 <= `self.denoising` <= 1.
         '''
-        def f(x):
-            x_n = x + self.denoising * np.random.normal(size=x.shape)
-            return np.clip(x_n, 0., 1.)
+        @jit(nopython=True)
+        def jitted_noise(x, nf):
+            for i in range(x.shape[0]):
+                for j in range(x.shape[1]):
+                    x[i, j] += nf * np.random.normal()
+            return x
+
+        def f(x, nf):
+            x_n = jitted_noise(x, nf)
+            return np.clip(x_n, 0, 1)
 
         try:
-            return f(x)
+            return f(x, self.denoising)
         except AttributeError:  # Multimodal
-            return [f(x_i) for x_i in x]
+            return [f(x_i, self.denoising) for x_i in x]
 
 
 class Autoencoder(AbstractAutoencoder):
