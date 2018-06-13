@@ -25,6 +25,7 @@ parser.add_argument('-t', '--model-type', default='mda', type=str)
 parser.add_argument('-m', '--models-path', default="models", type=str)
 parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
 parser.add_argument('-l', '--layers', type=str)
+parser.add_argument('-a', '--activation', default="sigmoid", type=str)
 parser.add_argument('-e', '--epochs', default=10, type=int)
 parser.add_argument('-b', '--batch-size', default=128, type=int)
 parser.add_argument('--outfile-tags', default="", type=str)
@@ -37,6 +38,7 @@ model_type = args.model_type
 models_path = os.path.expandvars(args.models_path)
 data_path = os.path.expandvars(args.data_path)
 layers = [int(i) for i in args.layers.split('-')]
+activation = args.activation
 epochs = args.epochs
 batch_size = args.batch_size
 ofile_tags = args.outfile_tags
@@ -73,7 +75,7 @@ def main():
         layers=layers,
         epochs=epochs,
         batch_size=batch_size,
-        activation='sigmoid',
+        activation=activation,
         optimizer=SGD(lr=0.2, momentum=0.9, decay=0.0, nesterov=False),
         verbose=2)
 
