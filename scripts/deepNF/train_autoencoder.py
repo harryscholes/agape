@@ -17,6 +17,7 @@ from agape.utils import stdout
 from agape.ml.autoencoder import MultimodalAutoencoder
 from keras.optimizers import SGD
 from sklearn.preprocessing import minmax_scale
+from scipy import io as sio
 
 print(__doc__)
 
