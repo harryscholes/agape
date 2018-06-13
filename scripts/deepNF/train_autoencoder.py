@@ -11,7 +11,6 @@ import argparse
 from agape.deepNF.utils import mkdir, plot_loss, load_ppmi_matrices
 from agape.utils import stdout
 from agape.ml.autoencoder import MultimodalAutoencoder
-from keras.optimizers import SGD
 from sklearn.preprocessing import minmax_scale
 from scipy import io as sio
 
@@ -26,6 +25,7 @@ parser.add_argument('-m', '--models-path', default="models", type=str)
 parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
 parser.add_argument('-l', '--layers', type=str)
 parser.add_argument('-a', '--activation', default="sigmoid", type=str)
+parser.add_argument('-z', '--optimizer', default="adam", type=str)
 parser.add_argument('-e', '--epochs', default=10, type=int)
 parser.add_argument('-b', '--batch-size', default=128, type=int)
 parser.add_argument('--outfile-tags', default="", type=str)
@@ -39,6 +39,7 @@ models_path = os.path.expandvars(args.models_path)
 data_path = os.path.expandvars(args.data_path)
 layers = [int(i) for i in args.layers.split('-')]
 activation = args.activation
+optimizer = args.optimizer
 epochs = args.epochs
 batch_size = args.batch_size
 ofile_tags = args.outfile_tags
@@ -76,7 +77,7 @@ def main():
         epochs=epochs,
         batch_size=batch_size,
         activation=activation,
-        optimizer=SGD(lr=0.2, momentum=0.9, decay=0.0, nesterov=False),
+        optimizer=optimizer,
         verbose=2)
 
     autoencoder.train()
