@@ -27,7 +27,7 @@ def plot_loss(history, models_path, model_name):
     plt.plot(history.history['val_loss'], 'o-')
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'], loc='upper left')
+    plt.legend(['Train', 'Validation'], loc='upper right')
     plt.savefig(str(Path(models_path, model_name + '_loss.png')),
                 bbox_inches='tight')
 
