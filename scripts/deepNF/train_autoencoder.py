@@ -85,8 +85,6 @@ def main():
 
     plot_loss(autoencoder.history, models_path, model_name)
 
-    autoencoder.encoder.save(os.path.join(models_path, f"{model_name}.h5"))
-
     embeddings = minmax_scale(autoencoder.encode(networks))
 
     embeddings_path = os.path.join(
