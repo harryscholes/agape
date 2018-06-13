@@ -91,7 +91,7 @@ def main():
 
     autoencoder.encoder.save(os.path.join(models_path, f"{model_name}.h5"))
 
-    embeddings = minmax_scale(autoencoder.predict(networks))
+    embeddings = minmax_scale(autoencoder.encode(networks))
 
     embeddings_path = os.path.join(
         models_path, f'{model_name}_embeddings.mat')
