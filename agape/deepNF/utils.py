@@ -3,7 +3,7 @@ import glob
 from scipy import io
 from pathlib import Path
 import matplotlib
-# matplotlib.use('agg')
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from agape.utils import stdout
 from sklearn.preprocessing import minmax_scale
