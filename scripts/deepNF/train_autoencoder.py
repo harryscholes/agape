@@ -6,20 +6,14 @@ Usage:
 '''
 import os
 # os.environ["KERAS_BACKEND"] = "tensorflow"
-from pathlib import Path
-from keras.models import Model
-from keras.callbacks import EarlyStopping
 import pickle
 import argparse
-from agape.deepNF.autoencoders import MDA
 from agape.deepNF.utils import mkdir, plot_loss, load_ppmi_matrices
 from agape.utils import stdout
 from agape.ml.autoencoder import MultimodalAutoencoder
 from keras.optimizers import SGD
 from sklearn.preprocessing import minmax_scale
 from scipy import io as sio
-
-print(__doc__)
 
 ##########################
 # Command line arguments #
@@ -46,6 +40,7 @@ layers = [int(i) for i in args.layers.split('-')]
 epochs = args.epochs
 batch_size = args.batch_size
 ofile_tags = args.outfile_tags
+
 
 ########
 # defs #
@@ -105,4 +100,5 @@ def main():
 ###################
 
 if __name__ == '__main__':
+    print(__doc__)
     main()
