@@ -74,7 +74,7 @@ def main():
         epochs=epochs,
         batch_size=batch_size,
         activation='sigmoid',
-        optimizer=SGD(lr=0.01, momentum=0.9, decay=0.0, nesterov=False),
+        optimizer=SGD(lr=0.2, momentum=0.9, decay=0.0, nesterov=False),
         verbose=2)
 
     autoencoder.train()
