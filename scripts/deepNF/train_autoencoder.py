@@ -85,7 +85,7 @@ def main():
 
     with open(os.path.join(models_path, f'{model_name}_training_history.pkl'),
               'wb') as f:
-        pickle.dump(autoencoder.history, f)
+        pickle.dump(autoencoder.history.history, f)
 
     plot_loss(autoencoder.history, models_path, model_name)
 
