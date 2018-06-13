@@ -41,7 +41,7 @@ org = args.organism
 model_type = args.model_type
 models_path = os.path.expandvars(args.models_path)
 data_path = os.path.expandvars(args.data_path)
-layers = [int(i) for i in args.layers.split(',')]
+layers = [int(i) for i in args.layers.split('-')]
 epochs = args.epochs
 batch_size = args.batch_size
 ofile_tags = args.outfile_tags
@@ -67,8 +67,8 @@ def main():
     # Train the autoencoder #
     #########################
 
-    model_name = f"{org}_{model_type.upper()}_arch_{str(arch)}{f'_{ofile_tags}' if ofile_tags != '' else ''}"
-    model_names.append(model_name)
+    model_name = f"{org}_{model_type.upper()}_arch_{args.layers}{f'_{ofile_tags}' if ofile_tags != '' else ''}"
+
     stdout("Running for architecture", model_name)
 
     autoencoder = MultimodalAutoencoder(
