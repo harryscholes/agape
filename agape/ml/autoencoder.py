@@ -43,7 +43,8 @@ class AbstractAutoencoder(ABC):
 
     # Arguments
         x_train: Union[np.ndarray, List[np.ndarray]], training data
-        x_val: Union[np.ndarray, List[np.ndarray]], validation data
+        x_val: Union[np.ndarray, List[np.ndarray], float], validation data or
+            proportion of x_train to use as validation data
         embedding_size: int, size of embedding
         layers: List[int], layer sizes
     '''
@@ -63,7 +64,7 @@ class AbstractAutoencoder(ABC):
     @abstractmethod
     def __init__(self, *,
                  x_train: Union[np.ndarray, List[np.ndarray]],
-                 x_val: Union[np.ndarray, List[np.ndarray]],
+                 x_val: Union[np.ndarray, List[np.ndarray], float],
                  sparse: Union[float, None] = None,
                  denoising: Union[float, None] = None,
                  epochs: int = 1, batch_size: int = 128,
@@ -99,9 +100,17 @@ class AbstractAutoencoder(ABC):
                                        min_delta=self.early_stopping[1])]
         else:
             callbacks = None
+
+        if isinstance(self.x_val, float):
+            validation_split = self.x_val
+            validation_data = None
+        else:
+            validation_split = None
+            validation_data = (self.x_val_in, self.x_val)
+
         self.history = self.autoencoder.fit(
             self.x_train_in, self.x_train,
-            validation_data=(self.x_val_in, self.x_val),
+            validation_data=validation_data, validation_split=validation_split,
             epochs=self.epochs, batch_size=self.batch_size, shuffle=True,
             callbacks=callbacks, verbose=self.verbose)
 
@@ -219,9 +228,12 @@ class Autoencoder(AbstractAutoencoder):
             verbose=verbose)
 
     def _check_parameters(self):
-        if not all(isinstance(x, np.ndarray)
-                   for x in (self.x_train, self.x_val)):
-            raise TypeError('`x`s must be np.ndarray or List[np.ndarray]')
+        if not isinstance(self.x_train, np.ndarray):
+            raise TypeError('`x_train` must be np.ndarray')
+
+        if not any((isinstance(self.x_val, np.ndarray),
+                   isinstance(self.x_val, float))):
+            raise TypeError('`x_val` must be np.ndarray or float')
 
         if not (isinstance(self.embedding_size, int)
                 and self.embedding_size > 0):
@@ -263,9 +275,12 @@ class DeepAutoencoder(AbstractAutoencoder):
             verbose=verbose)
 
     def _check_parameters(self):
-        if not all(isinstance(x, np.ndarray)
-                   for x in (self.x_train, self.x_val)):
-            raise TypeError('`x_train` and `x_val` must be np.ndarray')
+        if not isinstance(self.x_train, np.ndarray):
+            raise TypeError('`x_train` must be np.ndarray')
+
+        if not any((isinstance(self.x_val, np.ndarray),
+                   isinstance(self.x_val, float))):
+            raise TypeError('`x_val` must be np.ndarray or float')
 
         if not len(self.layers) > 1:
             raise ValueError('`len(layers)` must be > 1')
@@ -315,10 +330,14 @@ class MultimodalAutoencoder(AbstractAutoencoder):
             optimizer=optimizer, loss=loss, verbose=verbose)
 
     def _check_parameters(self):
-        xs = (self.x_train, self.x_val)
-        if not (all(isinstance(x, list) for x in xs) and
-                all(isinstance(y, np.ndarray) for x in xs for y in x)):
-            raise TypeError('`x_train` and `x_val` must be List[np.ndarray]')
+        if not (isinstance(self.x_train, list)
+                and all(isinstance(x, np.ndarray) for x in self.x_train)):
+            raise TypeError('`x_train` must be np.ndarray')
+
+        if not any((isinstance(self.x_val, list)
+                    and all(isinstance(x, np.ndarray) for x in self.x_val),
+                    isinstance(self.x_val, float))):
+            raise TypeError('`x_val` must be np.ndarray or float')
 
         if not len(self.layers) > 1:
             raise ValueError('`len(layers)` must be > 1')
