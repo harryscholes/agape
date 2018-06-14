@@ -8,11 +8,12 @@ import os
 # os.environ["KERAS_BACKEND"] = "tensorflow"
 import pickle
 import argparse
-from agape.deepNF.utils import mkdir, plot_loss, load_ppmi_matrices
+from agape.deepNF.utils import mkdir, load_ppmi_matrices
 from agape.utils import stdout
 from agape.ml.autoencoder import MultimodalAutoencoder
 from sklearn.preprocessing import minmax_scale
 from scipy import io as sio
+from agape.plotting import plot_loss
 
 ##########################
 # Command line arguments #
@@ -83,11 +84,13 @@ def main():
 
     autoencoder.train()
 
+    history = autoencoder.history.history
+
     with open(os.path.join(models_path, f'{model_name}_training_history.pkl'),
               'wb') as f:
-        pickle.dump(autoencoder.history.history, f)
+        pickle.dump(history, f)
 
-    plot_loss(autoencoder.history, models_path, model_name)
+    plot_loss((history, model_name), f'{models_path}/{model_name}')
 
     embeddings = minmax_scale(autoencoder.encode(networks))
 
