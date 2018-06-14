@@ -79,7 +79,7 @@ def main():
         batch_size=batch_size,
         activation=activation,
         optimizer=optimizer,
-        early_stopping=(10, 0.0001),
+        early_stopping=(5, 0.),
         verbose=2)
 
     autoencoder.train()
