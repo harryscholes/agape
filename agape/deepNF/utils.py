@@ -1,15 +1,10 @@
 import os
 import glob
 from scipy import io
-from pathlib import Path
-import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt
 from agape.utils import stdout
 from sklearn.preprocessing import minmax_scale
 import pandas as pd
 import numpy as np
-import seaborn as sns
 
 
 def mkdir(directory):
@@ -17,19 +12,6 @@ def mkdir(directory):
     '''
     if not os.path.exists(directory):
         os.makedirs(directory)
-
-
-def plot_loss(history, models_path, model_name):
-    '''Plot autoencoder training loss.
-    '''
-    sns.set(context='paper', style='ticks')
-    plt.plot(history.history['loss'], 'o-')
-    plt.plot(history.history['val_loss'], 'o-')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'], loc='upper right')
-    plt.savefig(str(Path(models_path, model_name + '_loss.png')),
-                bbox_inches='tight')
 
 
 def _load_ppmi_matrix(filepath):
