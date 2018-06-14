@@ -3,7 +3,7 @@
 import os
 import numpy as np
 import seaborn as sns
-from typing import Tuple, List
+from typing import Dict
 
 try:
     assert 'DISPLAY' in os.environ
@@ -16,19 +16,16 @@ finally:
 __all__ = ['plot_loss']
 
 
-def plot_loss(plot_data: List[Tuple[dict, str]], filename: str,
+def plot_loss(plot_data: Dict[str, dict], filename: str,
               end_epoch: int = None):
     '''Plot the training and validation loss from Keras training histories.
 
     # Arguments
-        plot_data: List[Tuple[dict, str]], list of tuples of the form
-            (history, label) i.e. Keras training history dict and str to label
-            the series in the figure legend
+        plot_data: Dict[str, dict], dict of Keras training history dicts keyed
+            by a str to label the series in the figure legend
         filename: str, file name
         end_epoch: int, final epoch to plot
     '''
-    plt.ioff()
-
     def plotter(history, label, c, n=None):
         '''Plots the lines.
         '''
@@ -42,7 +39,7 @@ def plot_loss(plot_data: List[Tuple[dict, str]], filename: str,
     c = sns.color_palette('colorblind')
     fig, ax = plt.subplots(1, figsize=(4, 3))
 
-    for idx, (history, label) in enumerate(plot_data):
+    for idx, (label, history) in enumerate(plot_data.items()):
         plotter(history, label, c[idx], end_epoch)
 
     ax.set_xlabel('Epoch')
