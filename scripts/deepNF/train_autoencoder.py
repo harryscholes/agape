@@ -90,7 +90,7 @@ def main():
               'wb') as f:
         pickle.dump(history, f)
 
-    plot_loss((history, model_name), f'{models_path}/{model_name}')
+    plot_loss({model_name: history}, f'{models_path}/{model_name}')
 
     embeddings = minmax_scale(autoencoder.encode(networks))
 

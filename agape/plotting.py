@@ -2,16 +2,16 @@
 '''
 import os
 import numpy as np
-import seaborn as sns
 from typing import Dict
 
 try:
     assert 'DISPLAY' in os.environ
 except AssertionError:
     import matplotlib
-    matplotlib.use('pdf')
+    matplotlib.use('Agg')
 finally:
     import matplotlib.pyplot as plt
+    import seaborn as sns
 
 __all__ = ['plot_loss']
 
