@@ -67,7 +67,12 @@ def main():
     # Train the autoencoder #
     #########################
 
-    model_name = f"{org}_{model_type.upper()}_arch_{args.layers}{f'_{ofile_tags}' if ofile_tags != '' else ''}"
+    model_name = [f'{org}', f'{model_type.upper()}', f'arch_{args.layers}']
+
+    if ofile_tags != '':
+        model_name.append(f'{f"{ofile_tags}" if ofile_tags != "" else ""}')
+
+    model_name = '_'.join(model_name)
 
     stdout("Running for architecture", model_name)
 
