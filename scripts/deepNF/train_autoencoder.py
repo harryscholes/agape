@@ -6,16 +6,14 @@ Usage:
 '''
 import os
 # os.environ["KERAS_BACKEND"] = "tensorflow"
-from pathlib import Path
-from keras.models import Model
-from keras.callbacks import EarlyStopping
 import pickle
 import argparse
-from agape.deepNF.autoencoders import MDA
-from agape.deepNF.utils import mkdir, plot_loss, load_ppmi_matrices
+from agape.deepNF.utils import mkdir, load_ppmi_matrices
 from agape.utils import stdout
-
-print(__doc__)
+from agape.ml.autoencoder import MultimodalAutoencoder
+from sklearn.preprocessing import minmax_scale
+from scipy import io as sio
+from agape.plotting import plot_loss
 
 ##########################
 # Command line arguments #
@@ -24,9 +22,11 @@ print(__doc__)
 parser = argparse.ArgumentParser()
 parser.add_argument('-o', '--organism', default='yeast', type=str)
 parser.add_argument('-t', '--model-type', default='mda', type=str)
-parser.add_argument('-m', '--models-path', default="./models", type=str)
+parser.add_argument('-m', '--models-path', default="models", type=str)
 parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
-parser.add_argument('-a', '--architecture', default="2", type=str)
+parser.add_argument('-l', '--layers', type=str)
+parser.add_argument('-a', '--activation', default="selu", type=str)
+parser.add_argument('-z', '--optimizer', default="AdaMax", type=str)
 parser.add_argument('-e', '--epochs', default=10, type=int)
 parser.add_argument('-b', '--batch-size', default=128, type=int)
 parser.add_argument('--outfile-tags', default="", type=str)
@@ -38,22 +38,12 @@ org = args.organism
 model_type = args.model_type
 models_path = os.path.expandvars(args.models_path)
 data_path = os.path.expandvars(args.data_path)
-select_arch = [int(i) for i in args.architecture.split(",")]
+layers = [int(i) for i in args.layers.split('-')]
+activation = args.activation
+optimizer = args.optimizer
 epochs = args.epochs
 batch_size = args.batch_size
 ofile_tags = args.outfile_tags
-
-# Autoencoder architecture
-architectures_dict = {
-    1: [600],
-    2: [6*2000, 600, 6*2000],
-    3: [6*2000, 6*1000, 600, 6*1000, 6*2000],
-    4: [6*2000, 6*1000, 6*500, 600, 6*500, 6*1000, 6*2000],
-    5: [6*2000, 6*1200, 6*800, 600, 6*800, 6*1200, 6*2000],
-    6: [6*2000, 6*1200, 6*800, 6*400, 600, 6*400, 6*800, 6*1200, 6*2000]}
-
-architectures = {k: v for k, v in architectures_dict.items()
-                 if k in select_arch}
 
 
 ########
@@ -77,43 +67,42 @@ def main():
     # Train the autoencoder #
     #########################
 
-    model_names = []
+    model_name = [f'{org}', f'{model_type.upper()}', f'arch_{args.layers}']
 
-    for arch in architectures:
-        model_name = f"{org}_{model_type.upper()}_arch_{str(arch)}{f'_{ofile_tags}' if ofile_tags != '' else ''}"
-        model_names.append(model_name)
-        stdout("Running for architecture", model_name)
+    if ofile_tags != '':
+        model_name.append(f'{f"{ofile_tags}" if ofile_tags != "" else ""}')
 
-        # Build model
-        model = MDA(dims, architectures[arch])
+    model_name = '_'.join(model_name)
 
-        # Train model
-        history = model.fit(
-            networks,
-            networks,
-            epochs=epochs,
-            batch_size=batch_size,
-            shuffle=True,
-            validation_split=0.1,
-            verbose=2,
-            callbacks=[
-                EarlyStopping(
-                    monitor='val_loss',
-                    min_delta=0.0001,
-                    patience=2)])
+    stdout("Running for architecture", model_name)
 
-        plot_loss(history, models_path, model_name)
+    autoencoder = MultimodalAutoencoder(
+        x_train=networks,
+        x_val=0.1,
+        layers=layers,
+        epochs=epochs,
+        batch_size=batch_size,
+        activation=activation,
+        optimizer=optimizer,
+        early_stopping=(5, 0.),
+        verbose=2)
 
-        with open(Path(models_path,
-                       f'{model_name}_training_history.pkl'), 'wb') as f:
-            pickle.dump(history.history, f)
+    autoencoder.train()
 
-        # Extract middle layer
-        mid_model = Model(
-            inputs=model.input,
-            outputs=model.get_layer('middle_layer').output)
+    history = autoencoder.history.history
 
-        mid_model.save(Path(models_path, f"{model_name}.h5"))
+    with open(os.path.join(models_path, f'{model_name}_training_history.pkl'),
+              'wb') as f:
+        pickle.dump(history, f)
+
+    plot_loss({model_name: history}, f'{models_path}/{model_name}')
+
+    embeddings = minmax_scale(autoencoder.encode(networks))
+
+    embeddings_path = os.path.join(
+        models_path, f'{model_name}_embeddings.mat')
+
+    sio.savemat(embeddings_path, {'embeddings': embeddings})
 
 
 ###################
@@ -121,4 +110,5 @@ def main():
 ###################
 
 if __name__ == '__main__':
+    print(__doc__)
     main()

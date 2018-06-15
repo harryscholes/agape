@@ -39,7 +39,9 @@ setup(
         'matplotlib>=2.2.0',
         'keras>=2.1.5',
         'tensorflow>=1.7.0',
-        'dask-searchcv>=0.2.0'],
+        'dask-searchcv>=0.2.0',
+        'numba>=0.38.0',
+        'seaborn>=0.8.1'],
     tests_require=test_deps,
     setup_requires=[
         'pytest-runner'],
