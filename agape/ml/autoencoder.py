@@ -328,7 +328,8 @@ class MultimodalAutoencoder(AbstractAutoencoder):
         super().__init__(
             x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
             epochs=epochs, batch_size=batch_size, activation=activation,
-            optimizer=optimizer, loss=loss, verbose=verbose)
+            optimizer=optimizer, loss=loss, early_stopping=early_stopping,
+            verbose=verbose)
 
     def _check_parameters(self):
         if not (isinstance(self.x_train, list)
