@@ -18,7 +18,7 @@ __all__ = ['plot_loss']
 
 def plot_loss(plot_data: Dict[str, dict], filename: str,
               end_epoch: int = None, log_y: bool = False,
-              colors=sns.color_palette('colorblind')):
+              plot_train: bool = True, colors=sns.color_palette('colorblind')):
     '''Plot the training and validation loss from Keras training histories.
 
     # Arguments
@@ -33,9 +33,10 @@ def plot_loss(plot_data: Dict[str, dict], filename: str,
         ax.plot(np.arange(1, len(history['val_loss']) + 1)[:n],
                 np.array(history['val_loss'])[:n],
                 color=c, label=label)
-        ax.plot(np.arange(1, len(history['loss']) + 1)[:n],
-                np.array(history['loss'])[:n],
-                color=c, linestyle='--', alpha=0.5)
+        if plot_train:
+            ax.plot(np.arange(1, len(history['loss']) + 1)[:n],
+                    np.array(history['loss'])[:n],
+                    color=c, linestyle='--', alpha=0.5)
 
     fig, ax = plt.subplots(1, figsize=(4, 3))
 
