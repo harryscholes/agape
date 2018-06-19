@@ -45,10 +45,11 @@ def plot_loss(plot_data: Dict[str, dict], filename: str,
 
     if log_y:
         ax.set_yscale("log", nonposy='clip')
-        ax.yaxis.set_minor_locator(
-            mpl.ticker.LogLocator(base=10.0, subs=(0.2, 0.4, 0.6, 0.8)))
-        ax.yaxis.set_minor_formatter(
-            mpl.ticker.FormatStrFormatter('%0.1f'))
+        ax.yaxis.set_major_locator(mpl.ticker.MultipleLocator(.1))
+        ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(.01))
+        ax.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
+        ax.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+
     ax.set_xlabel('Epoch')
     ax.set_ylabel('Loss')
     ax.legend(frameon=True)
