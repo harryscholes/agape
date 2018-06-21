@@ -3,12 +3,12 @@
 import os
 import numpy as np
 from typing import Dict
+import matplotlib as mpl
 
 try:
     assert 'DISPLAY' in os.environ
 except AssertionError:
-    import matplotlib
-    matplotlib.use('Agg')
+    mpl.use('Agg')
 finally:
     import matplotlib.pyplot as plt
     import seaborn as sns
@@ -17,7 +17,8 @@ __all__ = ['plot_loss']
 
 
 def plot_loss(plot_data: Dict[str, dict], filename: str,
-              end_epoch: int = None, log_y: bool = False):
+              end_epoch: int = None, log_y: bool = False,
+              plot_train: bool = True, colors=sns.color_palette('colorblind')):
     '''Plot the training and validation loss from Keras training histories.
 
     # Arguments
@@ -32,18 +33,23 @@ def plot_loss(plot_data: Dict[str, dict], filename: str,
         ax.plot(np.arange(1, len(history['val_loss']) + 1)[:n],
                 np.array(history['val_loss'])[:n],
                 color=c, label=label)
-        ax.plot(np.arange(1, len(history['loss']) + 1)[:n],
-                np.array(history['loss'])[:n],
-                color=c, linestyle='--', alpha=0.5)
+        if plot_train:
+            ax.plot(np.arange(1, len(history['loss']) + 1)[:n],
+                    np.array(history['loss'])[:n],
+                    color=c, linestyle='--', alpha=0.5)
 
-    c = sns.color_palette('colorblind')
     fig, ax = plt.subplots(1, figsize=(4, 3))
 
     for idx, (label, history) in enumerate(plot_data.items()):
-        plotter(history, label, c[idx], end_epoch)
+        plotter(history, label, colors[idx], end_epoch)
 
     if log_y:
         ax.set_yscale("log", nonposy='clip')
+        ax.yaxis.set_major_locator(mpl.ticker.MultipleLocator(.1))
+        ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(.01))
+        ax.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
+        ax.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+
     ax.set_xlabel('Epoch')
     ax.set_ylabel('Loss')
     ax.legend(frameon=True)
