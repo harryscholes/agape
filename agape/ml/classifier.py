@@ -7,11 +7,12 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
+from xgboost import XGBClassifier
 from dask_searchcv import GridSearchCV
 import warnings
 from ..base import Base
 
-__all__ = ["SVClassifier", "RFClassifier", "LRClassifier"]
+__all__ = ['SVClassifier', 'RFClassifier', 'LRClassifier', 'XGClassifier']
 
 
 class Classifier(Base):
@@ -198,4 +199,18 @@ class LRClassifier(Classifier):
                     random_state=random_state),
                 n_jobs=n_jobs),
             scale=True,
+            n_jobs=n_jobs)
+
+
+class XGClassifier(Classifier):
+    '''XGBoost Classifer.
+    '''
+    def __init__(self, random_state=None, n_jobs=1, **kwargs):
+        super().__init__(
+            OneVsRestClassifier(
+                XGBClassifier(
+                    random_state=random_state,
+                    n_jobs=n_jobs,
+                    **kwargs),
+                n_jobs=n_jobs),
             n_jobs=n_jobs)

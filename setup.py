@@ -29,7 +29,7 @@ setup(
     ],
     packages=find_packages(exclude=['docs']),
     install_requires=[
-        'numpy>=1.14',
+        'numpy>=1.12',
         'scipy>=1.0',
         'pandas>=0.22',
         'scikit-learn>=0.19',
@@ -41,7 +41,8 @@ setup(
         'tensorflow>=1.7.0',
         'dask-searchcv>=0.2.0',
         'numba>=0.38.0',
-        'seaborn>=0.8.1'],
+        'seaborn>=0.8.1',
+        'xgboost>0.72'],
     tests_require=test_deps,
     setup_requires=[
         'pytest-runner'],
