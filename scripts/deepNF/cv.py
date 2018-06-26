@@ -14,6 +14,7 @@ from agape.deepNF.utils import load_embeddings, mkdir
 from agape.utils import stdout, directory_exists
 import sklearn
 import warnings
+import glob
 
 print(__doc__)
 
@@ -28,7 +29,6 @@ parser.add_argument('-t', '--model-type', default='mda', type=str)
 parser.add_argument('-m', '--models-path', default="models", type=str)
 parser.add_argument('-r', '--results-path', default="results", type=str)
 parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
-parser.add_argument('-a', '--architecture', default=2, type=int)
 parser.add_argument('-n', '--n-trials', default=5, type=int)
 parser.add_argument('-v', '--validation', default='cv', type=str)
 parser.add_argument('-s', '--random_state', default=-1, type=int,
@@ -49,7 +49,6 @@ model_type = args.model_type
 models_path = os.path.expandvars(args.models_path)
 results_path = os.path.expandvars(args.results_path)
 data_path = os.path.expandvars(args.data_path)
-architecture = args.architecture
 n_trials = args.n_trials
 tags = args.tags
 validation = args.validation
@@ -104,11 +103,11 @@ def main():
     # Load embeddings #
     ###################
 
-    model_name = f'{org}_{model_type.upper()}_arch_{architecture}'
-    embeddings_file = f'{model_name}_features.mat'
-    embeddings_path = os.path.join(models_path, embeddings_file)
-    stdout('Loading embeddings', embeddings_path)
-    embeddings = load_embeddings(embeddings_path)
+    embeddings_file = glob.glob(os.path.join(models_path, '*.mat'))[0]
+    model_name = os.path.basename(embeddings_file).split('.')[0]
+    print(model_name)
+    stdout('Loading embeddings', embeddings_file)
+    embeddings = load_embeddings(embeddings_file)
 
     #######################
     # Load GO annotations #

@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, make_scorer
 from sklearn.model_selection import ShuffleSplit
+from sklearn.dummy import DummyClassifier
 from scipy.stats import sem as std
 from agape.ml.classifier import SVClassifier, RFClassifier, LRClassifier
 from agape.utils import stdout
@@ -117,7 +118,7 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
                 'kernel': ['rbf']}
         elif clf_type == 'LRC':
             clf = LRClassifier(n_jobs=n_jobs, random_state=random_state)
-            grid_search_params = {'C': np.logspace(-2, 1, 4)}
+            grid_search_params = {'C': np.logspace(-2, 2, 5)}
         elif clf_type == 'RFC':
             clf = RFClassifier(n_jobs=n_jobs, random_state=random_state)
             grid_search_params = {'max_features': ['auto']}
@@ -176,6 +177,9 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
             pm_v = getattr(perf_trial, pm)
             stdout(pm, pm_v)
             perf[pm][iteration] = pm_v
+
+        dummy = DummyClassifier().fit(X_train, y_train).score(X_test, y_test)
+        perf['dummy'][iteration] = dummy
 
     # Performance across K-fold cross-validation
 

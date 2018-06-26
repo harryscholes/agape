@@ -139,6 +139,15 @@ class Classifier(Base):
                 f'decision_function is not implemented for {self.__name__()}')\
                 from None
 
+    def score(self, X, y):
+        '''Mean accuracy score on test data.
+
+        # Arguments
+            X: np.ndarray, test features
+            y: np.ndarray, test labels
+        '''
+        return self.get_clf().score(X, y)
+
     def accuracy(self, y_true):
         '''Accuracy score.
 
