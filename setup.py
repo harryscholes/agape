@@ -42,7 +42,7 @@ setup(
         'dask-searchcv>=0.2.0',
         'numba>=0.38.0',
         'seaborn>=0.8.1',
-        'xgboost>0.72'],
+        'xgboost>=0.72'],
     tests_require=test_deps,
     setup_requires=[
         'pytest-runner'],
