@@ -3,7 +3,8 @@ from sklearn.metrics import accuracy_score, f1_score, make_scorer
 from sklearn.model_selection import ShuffleSplit
 from sklearn.dummy import DummyClassifier
 from scipy.stats import sem as std
-from agape.ml.classifier import SVClassifier, RFClassifier, LRClassifier
+from agape.ml.classifier import (SVClassifier, RFClassifier, LRClassifier,
+                                 XGBClassifier)
 from agape.utils import stdout
 from collections import defaultdict
 
@@ -122,6 +123,9 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
         elif clf_type == 'RFC':
             clf = RFClassifier(n_jobs=n_jobs, random_state=random_state)
             grid_search_params = {'max_features': ['auto']}
+        elif clf_type == 'XGB':
+            clf = XGBClassifier(n_jobs=n_jobs, random_state=random_state)
+            grid_search_params = {}
         else:
             raise ValueError('`clf` must be a class in agape.ml.classifer')
 

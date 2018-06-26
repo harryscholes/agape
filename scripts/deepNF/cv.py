@@ -151,7 +151,7 @@ def main():
 
     pprint(performance)
 
-    fout = f'{model_name}_{level}_{validation}_performance.json'
+    fout = f'{model_name}_{level}_{clf_type}_{validation}_performance.json'
 
     with open(os.path.join(results_path, fout), 'w') as f:
         json.dump(performance, f)
