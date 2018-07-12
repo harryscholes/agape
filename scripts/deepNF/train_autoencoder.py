@@ -11,7 +11,6 @@ import argparse
 from agape.deepNF.utils import mkdir, load_ppmi_matrices
 from agape.utils import stdout
 from agape.ml.autoencoder import MultimodalAutoencoder
-from sklearn.preprocessing import minmax_scale
 from scipy import io as sio
 from agape.plotting import plot_loss
 
@@ -100,7 +99,7 @@ def main():
 
     plot_loss({model_name: history}, f'{models_path}/{model_name}')
 
-    embeddings = minmax_scale(autoencoder.encode(networks))
+    embeddings = autoencoder.encode(networks)
 
     embeddings_path = os.path.join(
         models_path, f'{model_name}_embeddings.mat')
