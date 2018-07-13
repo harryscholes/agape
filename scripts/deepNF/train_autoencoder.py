@@ -11,7 +11,6 @@ import argparse
 from agape.deepNF.utils import mkdir, load_ppmi_matrices
 from agape.utils import stdout
 from agape.ml.autoencoder import MultimodalAutoencoder
-from sklearn.preprocessing import minmax_scale
 from scipy import io as sio
 from agape.plotting import plot_loss
 
@@ -25,6 +24,7 @@ parser.add_argument('-t', '--model-type', default='mda', type=str)
 parser.add_argument('-m', '--models-path', default="models", type=str)
 parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
 parser.add_argument('-l', '--layers', type=str)
+parser.add_argument('-s', '--sparse', default=None, type=float)
 parser.add_argument('-a', '--activation', default="selu", type=str)
 parser.add_argument('-z', '--optimizer', default="AdaMax", type=str)
 parser.add_argument('-e', '--epochs', default=100, type=int)
@@ -39,6 +39,7 @@ model_type = args.model_type
 models_path = os.path.expandvars(args.models_path)
 data_path = os.path.expandvars(args.data_path)
 layers = [int(i) for i in args.layers.split('-')]
+sparse = args.sparse
 activation = args.activation
 optimizer = args.optimizer
 epochs = args.epochs
@@ -81,6 +82,7 @@ def main():
         x_val=0.1,
         layers=layers,
         epochs=epochs,
+        sparse=sparse,
         batch_size=batch_size,
         activation=activation,
         optimizer=optimizer,
@@ -97,7 +99,7 @@ def main():
 
     plot_loss({model_name: history}, f'{models_path}/{model_name}')
 
-    embeddings = minmax_scale(autoencoder.encode(networks))
+    embeddings = autoencoder.encode(networks)
 
     embeddings_path = os.path.join(
         models_path, f'{model_name}_embeddings.mat')
