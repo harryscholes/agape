@@ -37,6 +37,7 @@ parser.add_argument('-s', '--random_state', default=-1, type=int,
                           number will be used as a seed.')
 parser.add_argument('--tags', default="", type=str)
 parser.add_argument('-j', '--n_jobs', default=1, type=int)
+parser.add_argument('-t', '--n_threads', default=1, type=int)
 parser.add_argument('-c', '--clf_type', default='LRC', type=str)
 parser.add_argument('--test', default=None, type=int,
                     help='If True, then only a subset of the data is used')
@@ -53,6 +54,7 @@ n_trials = args.n_trials
 tags = args.tags
 validation = args.validation
 n_jobs = args.n_jobs
+n_threads = args.n_threads
 random_state = args.random_state
 level = args.level
 clf_type = args.clf_type
@@ -144,6 +146,7 @@ def main():
         annotations,
         n_trials=n_trials,
         n_jobs=n_jobs,
+        n_threads=n_threads,
         random_state=random_state,
         clf_type=clf_type)
 

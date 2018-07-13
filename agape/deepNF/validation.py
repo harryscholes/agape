@@ -67,7 +67,7 @@ class _Performance:
         self.f1 = f1_score(y_true, y_pred, average='micro')
 
 
-def cross_validation(X, y, n_trials=10, n_jobs=1,
+def cross_validation(X, y, n_trials=10, n_jobs=1, n_threads=1,
                      random_state=None, clf_type='LRC'):
     '''Perform model selection via cross validation.
     '''
@@ -124,7 +124,8 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
             clf = RFClassifier(n_jobs=n_jobs, random_state=random_state)
             grid_search_params = {'max_features': ['auto']}
         elif clf_type == 'XGB':
-            clf = XGBClassifier(n_jobs=n_jobs, random_state=random_state)
+            clf = XGBClassifier(
+                n_jobs=n_jobs, n_threads=n_threads, random_state=random_state)
             grid_search_params = {}
         else:
             raise ValueError('`clf` must be a class in agape.ml.classifer')
