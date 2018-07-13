@@ -25,7 +25,6 @@ print(__doc__)
 parser = argparse.ArgumentParser()
 parser.add_argument('-l', '--level', required=True)
 parser.add_argument('-o', '--organism', default='yeast', type=str)
-parser.add_argument('-t', '--model-type', default='mda', type=str)
 parser.add_argument('-m', '--models-path', default="models", type=str)
 parser.add_argument('-r', '--results-path', default="results", type=str)
 parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
@@ -46,7 +45,6 @@ args = parser.parse_args()
 stdout("Command line arguments", args)
 
 org = args.organism
-model_type = args.model_type
 models_path = os.path.expandvars(args.models_path)
 results_path = os.path.expandvars(args.results_path)
 data_path = os.path.expandvars(args.data_path)
