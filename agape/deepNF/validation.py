@@ -127,15 +127,15 @@ def cross_validation(X, y, n_trials=10, n_jobs=1, n_threads=1,
             clf = XGBClassifier(
                 learning_rate=0.1,
                 n_estimators=1000,
-                max_depth=5,
-                min_child_weight=1,
                 gamma=0,
                 subsample=0.8,
                 colsample_bytree=0.8,
                 objective='binary:logistic',
                 scale_pos_weight=1,
                 n_jobs=n_jobs, n_threads=n_threads, random_state=random_state)
-            grid_search_params = {}
+            grid_search_params = {
+                'max_depth': range(3, 10, 2),
+                'min_child_weight': range(1, 6, 2)}
         else:
             raise ValueError('`clf` must be a class in agape.ml.classifer')
 
