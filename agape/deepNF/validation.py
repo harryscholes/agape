@@ -125,6 +125,15 @@ def cross_validation(X, y, n_trials=10, n_jobs=1, n_threads=1,
             grid_search_params = {'max_features': ['auto']}
         elif clf_type == 'XGB':
             clf = XGBClassifier(
+                learning_rate=0.1,
+                n_estimators=1000,
+                max_depth=5,
+                min_child_weight=1,
+                gamma=0,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                objective='binary:logistic',
+                scale_pos_weight=1,
                 n_jobs=n_jobs, n_threads=n_threads, random_state=random_state)
             grid_search_params = {}
         else:
