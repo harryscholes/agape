@@ -104,7 +104,7 @@ def main():
     ###################
 
     embeddings_file = glob.glob(os.path.join(models_path, '*.mat'))[0]
-    model_name = os.path.splitext(os.path.basename(embeddings_file))
+    model_name = os.path.splitext(os.path.basename(embeddings_file))[0]
     print(model_name)
     stdout('Loading embeddings', embeddings_file)
     embeddings = load_embeddings(embeddings_file)
