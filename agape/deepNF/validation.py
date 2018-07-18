@@ -68,7 +68,7 @@ class _Performance:
 
 
 def cross_validation(X, y, n_trials=10, n_jobs=1, n_threads=1,
-                     random_state=None, clf_type='LRC'):
+                     random_state=None, clf_type='LRC', max_depth=5):
     '''Perform model selection via cross validation.
     '''
     stdout('Number of samples pre-filtering', X.shape)
@@ -134,8 +134,8 @@ def cross_validation(X, y, n_trials=10, n_jobs=1, n_threads=1,
                 scale_pos_weight=1,
                 n_jobs=n_jobs, n_threads=n_threads, random_state=random_state)
             grid_search_params = {
-                'max_depth': range(3, 10, 2),
-                'min_child_weight': range(1, 6, 2)}
+                'max_depth': max_depth,
+                'min_child_weight': range(1, 3)}
         else:
             raise ValueError('`clf` must be a class in agape.ml.classifer')
 

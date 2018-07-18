@@ -87,6 +87,10 @@ measures = ('m-aupr_avg', 'm-aupr_std', 'M-aupr_avg', 'M-aupr_std',
             'F1_avg', 'F1_std', 'acc_avg', 'acc_std')
 
 
+# Hyperparameters
+max_depth = {'level1': [7, 8, 9], 'level2': [3, 4, 5], 'level3': [3, 4, 5]}
+
+
 ########
 # defs #
 ########
@@ -146,7 +150,8 @@ def main():
         n_jobs=n_jobs,
         n_threads=n_threads,
         random_state=random_state,
-        clf_type=clf_type)
+        clf_type=clf_type,
+        max_depth=max_depth[level])
 
     performance['level'] = level
 
