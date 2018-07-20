@@ -67,8 +67,8 @@ class _Performance:
         self.f1 = f1_score(y_true, y_pred, average='micro')
 
 
-def cross_validation(X, y, n_trials=10, n_jobs=1,
-                     random_state=None, clf_type='LRC'):
+def cross_validation(X, y, n_trials=10, n_jobs=1, n_threads=1,
+                     random_state=None, clf_type='LRC', max_depth=5):
     '''Perform model selection via cross validation.
     '''
     stdout('Number of samples pre-filtering', X.shape)
@@ -114,8 +114,8 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
         if clf_type == 'SVC':
             clf = SVClassifier(n_jobs=n_jobs, random_state=random_state)
             grid_search_params = {
-                'C': [1],  # np.logspace(-2, 1, 4),
-                'gamma': ['auto'],  # np.logspace(-3, 0, 4),
+                'C': np.logspace(-1, 2, 4),
+                'gamma': np.logspace(-3, 0, 4),
                 'kernel': ['rbf']}
         elif clf_type == 'LRC':
             clf = LRClassifier(n_jobs=n_jobs, random_state=random_state)
@@ -124,8 +124,18 @@ def cross_validation(X, y, n_trials=10, n_jobs=1,
             clf = RFClassifier(n_jobs=n_jobs, random_state=random_state)
             grid_search_params = {'max_features': ['auto']}
         elif clf_type == 'XGB':
-            clf = XGBClassifier(n_jobs=n_jobs, random_state=random_state)
-            grid_search_params = {}
+            clf = XGBClassifier(
+                learning_rate=0.1,
+                n_estimators=1000,
+                gamma=0,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                objective='binary:logistic',
+                scale_pos_weight=1,
+                n_jobs=n_jobs, n_threads=n_threads, random_state=random_state)
+            grid_search_params = {
+                'max_depth': max_depth,
+                'min_child_weight': range(1, 3)}
         else:
             raise ValueError('`clf` must be a class in agape.ml.classifer')
 

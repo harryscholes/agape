@@ -25,7 +25,6 @@ print(__doc__)
 parser = argparse.ArgumentParser()
 parser.add_argument('-l', '--level', required=True)
 parser.add_argument('-o', '--organism', default='yeast', type=str)
-parser.add_argument('-t', '--model-type', default='mda', type=str)
 parser.add_argument('-m', '--models-path', default="models", type=str)
 parser.add_argument('-r', '--results-path', default="results", type=str)
 parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
@@ -37,6 +36,7 @@ parser.add_argument('-s', '--random_state', default=-1, type=int,
                           number will be used as a seed.')
 parser.add_argument('--tags', default="", type=str)
 parser.add_argument('-j', '--n_jobs', default=1, type=int)
+parser.add_argument('-t', '--n_threads', default=1, type=int)
 parser.add_argument('-c', '--clf_type', default='LRC', type=str)
 parser.add_argument('--test', default=None, type=int,
                     help='If True, then only a subset of the data is used')
@@ -45,7 +45,6 @@ args = parser.parse_args()
 stdout("Command line arguments", args)
 
 org = args.organism
-model_type = args.model_type
 models_path = os.path.expandvars(args.models_path)
 results_path = os.path.expandvars(args.results_path)
 data_path = os.path.expandvars(args.data_path)
@@ -53,6 +52,7 @@ n_trials = args.n_trials
 tags = args.tags
 validation = args.validation
 n_jobs = args.n_jobs
+n_threads = args.n_threads
 random_state = args.random_state
 level = args.level
 clf_type = args.clf_type
@@ -87,6 +87,10 @@ measures = ('m-aupr_avg', 'm-aupr_std', 'M-aupr_avg', 'M-aupr_std',
             'F1_avg', 'F1_std', 'acc_avg', 'acc_std')
 
 
+# Hyperparameters
+max_depth = {'level1': [7, 8, 9], 'level2': [3, 4, 5], 'level3': [3, 4, 5]}
+
+
 ########
 # defs #
 ########
@@ -104,7 +108,7 @@ def main():
     ###################
 
     embeddings_file = glob.glob(os.path.join(models_path, '*.mat'))[0]
-    model_name = os.path.basename(embeddings_file).split('.')[0]
+    model_name = os.path.splitext(os.path.basename(embeddings_file))[0]
     print(model_name)
     stdout('Loading embeddings', embeddings_file)
     embeddings = load_embeddings(embeddings_file)
@@ -144,8 +148,10 @@ def main():
         annotations,
         n_trials=n_trials,
         n_jobs=n_jobs,
+        n_threads=n_threads,
         random_state=random_state,
-        clf_type=clf_type)
+        clf_type=clf_type,
+        max_depth=max_depth[level])
 
     performance['level'] = level
 

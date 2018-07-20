@@ -204,13 +204,16 @@ class LRClassifier(Classifier):
 
 class XGBClassifier(Classifier):
     '''XGBoost Classifer.
+
+    # Arguments
+        n_threads: int, number of threads that a single tree runs on
+        n_jobs: int, number of simultaneous trees built by GridSearchCV
     '''
-    def __init__(self, random_state=None, n_jobs=1, **kwargs):
+    def __init__(self, random_state=None, n_threads=1, n_jobs=1, **kwargs):
         super().__init__(
             OneVsRestClassifier(
                 XGBClassifier_(
                     random_state=random_state,
-                    n_jobs=n_jobs,
-                    **kwargs),
-                n_jobs=n_jobs),
+                    n_jobs=n_threads,
+                    **kwargs)),
             n_jobs=n_jobs)
