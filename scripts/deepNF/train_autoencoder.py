@@ -86,7 +86,8 @@ def main():
         batch_size=batch_size,
         activation=activation,
         optimizer=optimizer,
-        early_stopping=(5, 0.),
+        # early_stopping=(5, 0.),
+        save_best_model='best_model.h5',
         verbose=2)
 
     autoencoder.train()
