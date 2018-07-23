@@ -13,10 +13,10 @@ AbstractAutoencoder class.
     Denoising: corrupt input data with noise
 '''
 import numpy as np
-from keras.layers import Dense, Input, Concatenate
-from keras.models import Model
+from keras.layers import Dense, Input, Concatenate, LeakyReLU
+from keras.models import Model, load_model
 from keras.regularizers import l1
-from keras.callbacks import EarlyStopping
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 from typing import Union, List, Tuple
 from abc import ABC, abstractmethod
 from numba import jit
@@ -57,6 +57,7 @@ class AbstractAutoencoder(ABC):
         optimizer: str, training optimizer
         loss: str, loss function
         early_stopping: Tuple[int, float], of the form (patience, min_delta)
+        save_best_model: str, filepath for where to save the best epoch's model
         verbose: int, logging verbosity
     '''[5:]
     __doc__ += generic_arguments
@@ -71,6 +72,7 @@ class AbstractAutoencoder(ABC):
                  activation: str = 'relu', optimizer: str = 'adam',
                  loss: str = 'binary_crossentropy',
                  early_stopping: Union[Tuple[int, float], None] = None,
+                 save_best_model: Union[str, None] = None,
                  verbose: int = 1):
         self.x_train = x_train
         self.x_val = x_val
@@ -82,7 +84,10 @@ class AbstractAutoencoder(ABC):
         self.optimizer = optimizer
         self.loss = loss
         self.early_stopping = early_stopping
+        self.save_best_model = save_best_model
         self.verbose = verbose
+        if self.activation == 'leaky_relu':
+            self.activation = LeakyReLU(alpha=0.1)
         self._check_parameters()
         self._compile()
 
@@ -95,11 +100,15 @@ class AbstractAutoencoder(ABC):
     def train(self):
         '''Train the autoencoder.
         '''
+        callbacks = []
+
         if self.early_stopping:
-            callbacks = [EarlyStopping(patience=self.early_stopping[0],
-                                       min_delta=self.early_stopping[1])]
-        else:
-            callbacks = None
+            callbacks.append(EarlyStopping(patience=self.early_stopping[0],
+                                           min_delta=self.early_stopping[1]))
+
+        if self.save_best_model:
+            callbacks.append(ModelCheckpoint('best_model.h5',
+                                             save_best_only=True))
 
         if isinstance(self.x_val, float):
             validation_split = self.x_val
@@ -220,13 +229,13 @@ class Autoencoder(AbstractAutoencoder):
                  batch_size: int = 128, activation: str = 'relu',
                  optimizer: str = 'adam', loss: str = 'binary_crossentropy',
                  early_stopping: Union[Tuple[int, float], None] = None,
-                 verbose: int = 1):
+                 save_best_model: Union[str, None] = None, verbose: int = 1):
         self.embedding_size = embedding_size
         super().__init__(
             x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
             epochs=epochs, batch_size=batch_size, activation=activation,
             optimizer=optimizer, loss=loss, early_stopping=early_stopping,
-            verbose=verbose)
+            save_best_model=save_best_model, verbose=verbose)
 
     def _check_parameters(self):
         if not isinstance(self.x_train, np.ndarray):
@@ -250,6 +259,17 @@ class Autoencoder(AbstractAutoencoder):
 
         super()._compile()
 
+    def train(self):
+        super().train()
+
+        if self.save_best_model:
+            best_model = load_model(self.save_best_model)
+            input = best_model.layers[0].input
+            self.autoencoder = Model(input,
+                                     best_model.layers[-1].output)
+            self.encoder = Model(input,
+                                 best_model.get_layer('encoding').output)
+
 
 class DeepAutoencoder(AbstractAutoencoder):
     '''Deep autoencoder.
@@ -267,13 +287,13 @@ class DeepAutoencoder(AbstractAutoencoder):
                  batch_size: int = 128, activation: str = 'relu',
                  optimizer: str = 'adam', loss: str = 'binary_crossentropy',
                  early_stopping: Union[Tuple[int, float], None] = None,
-                 verbose: int = 1):
+                 save_best_model: Union[str, None] = None, verbose: int = 1):
         self.layers = layers
         super().__init__(
             x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
             epochs=epochs, batch_size=batch_size, activation=activation,
             optimizer=optimizer, loss=loss, early_stopping=early_stopping,
-            verbose=verbose)
+            save_best_model=save_best_model, verbose=verbose)
 
     def _check_parameters(self):
         if not isinstance(self.x_train, np.ndarray):
@@ -306,6 +326,17 @@ class DeepAutoencoder(AbstractAutoencoder):
 
         super()._compile()
 
+    def train(self):
+        super().train()
+
+        if self.save_best_model:
+            best_model = load_model(self.save_best_model)
+            input = best_model.layers[0].input
+            self.autoencoder = Model(input,
+                                     best_model.layers[-1].output)
+            self.encoder = Model(input,
+                                 best_model.get_layer('encoding').output)
+
 
 class MultimodalAutoencoder(AbstractAutoencoder):
     '''Multimodal deep autoencoder.
@@ -323,13 +354,13 @@ class MultimodalAutoencoder(AbstractAutoencoder):
                  batch_size: int = 128, activation: str = 'relu',
                  optimizer: str = 'adam', loss: str = 'binary_crossentropy',
                  early_stopping: Union[Tuple[int, float], None] = None,
-                 verbose: int = 1):
+                 save_best_model: Union[str, None] = None, verbose: int = 1):
         self.layers = layers
         super().__init__(
             x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
             epochs=epochs, batch_size=batch_size, activation=activation,
             optimizer=optimizer, loss=loss, early_stopping=early_stopping,
-            verbose=verbose)
+            save_best_model=save_best_model, verbose=verbose)
 
     def _check_parameters(self):
         if not (isinstance(self.x_train, list)
@@ -380,3 +411,15 @@ class MultimodalAutoencoder(AbstractAutoencoder):
             for i in range(len(self.x_train))]
 
         super()._compile()
+
+    def train(self):
+        super().train()
+
+        if self.save_best_model:
+            best_model = load_model(self.save_best_model)
+            inputs = [best_model.get_layer(f'input_{i}').input
+                      for i in range(len(self.x_train))]
+            self.autoencoder = Model(inputs,
+                                     best_model.layers[-1].output)
+            self.encoder = Model(inputs,
+                                 best_model.get_layer('encoding').output)
