@@ -13,7 +13,7 @@ AbstractAutoencoder class.
     Denoising: corrupt input data with noise
 '''
 import numpy as np
-from keras.layers import Dense, Input, Concatenate, LeakyReLU
+from keras.layers import Dense, Input, Concatenate
 from keras.models import Model, load_model
 from keras.regularizers import l1
 from keras.callbacks import EarlyStopping, ModelCheckpoint
@@ -86,8 +86,6 @@ class AbstractAutoencoder(ABC):
         self.early_stopping = early_stopping
         self.save_best_model = save_best_model
         self.verbose = verbose
-        if self.activation == 'leaky_relu':
-            self.activation = LeakyReLU(alpha=0.1)
         self._check_parameters()
         self._compile()
 
