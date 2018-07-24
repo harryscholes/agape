@@ -13,13 +13,14 @@ AbstractAutoencoder class.
     Denoising: corrupt input data with noise
 '''
 import numpy as np
-from keras.layers import Dense, Input, Concatenate
+from keras.layers import Dense, Input, Concatenate, LeakyReLU
 from keras.models import Model, load_model
 from keras.regularizers import l1
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from typing import Union, List, Tuple
 from abc import ABC, abstractmethod
 from numba import jit
+import functools
 
 __all__ = ['Autoencoder', 'DeepAutoencoder', 'MultimodalAutoencoder']
 
@@ -86,6 +87,11 @@ class AbstractAutoencoder(ABC):
         self.early_stopping = early_stopping
         self.save_best_model = save_best_model
         self.verbose = verbose
+
+        if self.activation == 'leaky_relu':
+            self.af = functools.partial(LeakyReLU, alpha=.1)
+            self.activation = None
+
         self._check_parameters()
         self._compile()
 
@@ -182,12 +188,17 @@ class AbstractAutoencoder(ABC):
         Optionally applies l1 regularisation for sparsity.
         '''
         if self.sparse is None:
-            return Dense(embedding_size, activation=self.activation,
-                         name='encoding')(previous_layer)
+            h = Dense(embedding_size, activation=self.activation,
+                      name='encoding')(previous_layer)
         else:
-            return Dense(embedding_size, activation=self.activation,
-                         activity_regularizer=l1(self.sparse),
-                         name='encoding')(previous_layer)
+            h = Dense(embedding_size, activation=self.activation,
+                      activity_regularizer=l1(self.sparse),
+                      name='encoding')(previous_layer)
+
+        if self.activation is None:
+            return self.af()(h)
+
+        return h
 
     def _add_noise(self, x):
         '''Add noise to `x`.
@@ -313,11 +324,17 @@ class DeepAutoencoder(AbstractAutoencoder):
         for i in range(len(self.layers) - 1):
             hidden = Dense(self.layers[i], activation=self.activation)(hidden)
 
+            if self.activation is None:
+                hidden = self.af()(hidden)
+
         self.encoded = self._encoder_layer(self.layers[-1], hidden)
 
         hidden = self.encoded  # For looping over all hidden layers easily
         for i in range(len(self.layers) - 2, -1, -1):
             hidden = Dense(self.layers[i], activation=self.activation)(hidden)
+
+            if self.activation is None:
+                hidden = self.af()(hidden)
 
         self.decoded = Dense(self.x_train.shape[1],
                              activation='sigmoid')(hidden)
@@ -382,18 +399,24 @@ class MultimodalAutoencoder(AbstractAutoencoder):
         # Each of the m input modes goes through its own dense layer
         hidden = [Dense(self.layers[0], activation=self.activation)(input)
                   for input in self.input]
+        if self.activation is None:
+            hidden = [self.af()(h) for h in hidden]
         # These m dense layers are then concatenated
         concatenated = Concatenate(name='concatenated_0')(hidden)
         # Standard deep autoencoder architecture
         hidden = concatenated  # For looping over all hidden layers easily
         for i in range(1, len(self.layers) - 1):
             hidden = Dense(self.layers[i], activation=self.activation)(hidden)
+            if self.activation is None:
+                hidden = self.af()(hidden)
 
         self.encoded = self._encoder_layer(self.layers[-1], hidden)
 
         hidden = self.encoded  # For looping over all hidden layers easily
         for i in range(len(self.layers) - 2, 0, -1):
             hidden = Dense(self.layers[i], activation=self.activation)(hidden)
+            if self.activation is None:
+                hidden = self.af()(hidden)
         # Regenerate the concatenated layer
         concatenated = Dense(self.layers[0] * len(self.x_train),
                              activation=self.activation,
@@ -402,6 +425,8 @@ class MultimodalAutoencoder(AbstractAutoencoder):
         hidden = [
             Dense(self.layers[0], activation=self.activation)(concatenated)
             for i in range(len(self.x_train))]
+        if self.activation is None:
+            hidden = [self.af()(h) for h in hidden]
         # Regenerate the m input modes
         self.decoded = [
             Dense(self.x_train[i].shape[1], activation='sigmoid',
