@@ -13,7 +13,7 @@ AbstractAutoencoder class.
     Denoising: corrupt input data with noise
 '''
 import numpy as np
-from keras.layers import Dense, Input, Concatenate, LeakyReLU
+from keras.layers import Dense, Input, Concatenate, LeakyReLU, Dropout
 from keras.models import Model, load_model
 from keras.regularizers import l1
 from keras.callbacks import EarlyStopping, ModelCheckpoint
@@ -51,6 +51,7 @@ class AbstractAutoencoder(ABC):
     '''
     generic_arguments = '''
         sparse: float (optional), l1 regularization factor if Sparse
+        dropout: float (optional), dropout probability for regularization
         denoising: float (optional), noise factor if Denoising
         epochs: int, number of epochs to train for
         batch_size: int, batch size
@@ -68,6 +69,7 @@ class AbstractAutoencoder(ABC):
                  x_train: Union[np.ndarray, List[np.ndarray]],
                  x_val: Union[np.ndarray, List[np.ndarray], float],
                  sparse: Union[float, None] = None,
+                 dropout: Union[float, None] = None,
                  denoising: Union[float, None] = None,
                  epochs: int = 1, batch_size: int = 128,
                  activation: str = 'relu', optimizer: str = 'adam',
@@ -78,6 +80,7 @@ class AbstractAutoencoder(ABC):
         self.x_train = x_train
         self.x_val = x_val
         self.sparse = sparse
+        self.dropout = dropout
         self.denoising = denoising
         self.epochs = epochs
         self.batch_size = batch_size
@@ -167,6 +170,10 @@ class AbstractAutoencoder(ABC):
             raise TypeError(
                 '`early_stopping must be Tuple[int, float] or None')
 
+        if not isinstance(self.dropout, float):
+            if self.dropout is not None:
+                raise TypeError('`dropout` must be between 0 and 1')
+
     @abstractmethod
     def _compile(self):
         '''Compiles the autoencoder.
@@ -196,7 +203,10 @@ class AbstractAutoencoder(ABC):
                       name='encoding')(previous_layer)
 
         if self.activation is None:
-            return self.af()(h)
+            h = self.af()(h)
+
+        if self.dropout:
+            h = Dropout(self.dropout)(h)
 
         return h
 
@@ -234,6 +244,7 @@ class Autoencoder(AbstractAutoencoder):
 
     def __init__(self, x_train: np.ndarray, x_val: np.ndarray,
                  embedding_size: int, sparse: Union[float, None] = None,
+                 dropout: Union[float, None] = None,
                  denoising: Union[float, None] = None, epochs: int = 1,
                  batch_size: int = 128, activation: str = 'relu',
                  optimizer: str = 'adam', loss: str = 'binary_crossentropy',
@@ -244,7 +255,7 @@ class Autoencoder(AbstractAutoencoder):
             x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
             epochs=epochs, batch_size=batch_size, activation=activation,
             optimizer=optimizer, loss=loss, early_stopping=early_stopping,
-            save_best_model=save_best_model, verbose=verbose)
+            save_best_model=save_best_model, verbose=verbose, dropout=dropout)
 
     def _check_parameters(self):
         if not isinstance(self.x_train, np.ndarray):
@@ -292,6 +303,7 @@ class DeepAutoencoder(AbstractAutoencoder):
 
     def __init__(self, x_train: np.ndarray, x_val: np.ndarray,
                  layers: List[int], sparse: Union[float, None] = None,
+                 dropout: Union[float, None] = None,
                  denoising: Union[float, None] = None, epochs: int = 1,
                  batch_size: int = 128, activation: str = 'relu',
                  optimizer: str = 'adam', loss: str = 'binary_crossentropy',
@@ -302,7 +314,7 @@ class DeepAutoencoder(AbstractAutoencoder):
             x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
             epochs=epochs, batch_size=batch_size, activation=activation,
             optimizer=optimizer, loss=loss, early_stopping=early_stopping,
-            save_best_model=save_best_model, verbose=verbose)
+            save_best_model=save_best_model, verbose=verbose, dropout=dropout)
 
     def _check_parameters(self):
         if not isinstance(self.x_train, np.ndarray):
@@ -327,6 +339,9 @@ class DeepAutoencoder(AbstractAutoencoder):
             if self.activation is None:
                 hidden = self.af()(hidden)
 
+            if self.dropout:
+                hidden = Dropout(self.dropout)(hidden)
+
         self.encoded = self._encoder_layer(self.layers[-1], hidden)
 
         hidden = self.encoded  # For looping over all hidden layers easily
@@ -335,6 +350,9 @@ class DeepAutoencoder(AbstractAutoencoder):
 
             if self.activation is None:
                 hidden = self.af()(hidden)
+
+            if self.dropout:
+                hidden = Dropout(self.dropout)(hidden)
 
         self.decoded = Dense(self.x_train.shape[1],
                              activation='sigmoid')(hidden)
@@ -365,6 +383,7 @@ class MultimodalAutoencoder(AbstractAutoencoder):
 
     def __init__(self, x_train: np.ndarray, x_val: np.ndarray,
                  layers: List[int], sparse: Union[float, None] = None,
+                 dropout: Union[float, None] = None,
                  denoising: Union[float, None] = None, epochs: int = 1,
                  batch_size: int = 128, activation: str = 'relu',
                  optimizer: str = 'adam', loss: str = 'binary_crossentropy',
@@ -375,7 +394,7 @@ class MultimodalAutoencoder(AbstractAutoencoder):
             x_train=x_train, x_val=x_val, sparse=sparse, denoising=denoising,
             epochs=epochs, batch_size=batch_size, activation=activation,
             optimizer=optimizer, loss=loss, early_stopping=early_stopping,
-            save_best_model=save_best_model, verbose=verbose)
+            save_best_model=save_best_model, verbose=verbose, dropout=dropout)
 
     def _check_parameters(self):
         if not (isinstance(self.x_train, list)
@@ -401,6 +420,8 @@ class MultimodalAutoencoder(AbstractAutoencoder):
                   for input in self.input]
         if self.activation is None:
             hidden = [self.af()(h) for h in hidden]
+        if self.dropout:
+            hidden = [Dropout(self.dropout)(h) for h in hidden]
         # These m dense layers are then concatenated
         concatenated = Concatenate(name='concatenated_0')(hidden)
         # Standard deep autoencoder architecture
@@ -409,6 +430,8 @@ class MultimodalAutoencoder(AbstractAutoencoder):
             hidden = Dense(self.layers[i], activation=self.activation)(hidden)
             if self.activation is None:
                 hidden = self.af()(hidden)
+            if self.dropout:
+                hidden = Dropout(self.dropout)(hidden)
 
         self.encoded = self._encoder_layer(self.layers[-1], hidden)
 
@@ -417,6 +440,8 @@ class MultimodalAutoencoder(AbstractAutoencoder):
             hidden = Dense(self.layers[i], activation=self.activation)(hidden)
             if self.activation is None:
                 hidden = self.af()(hidden)
+            if self.dropout:
+                hidden = Dropout(self.dropout)(hidden)
         # Regenerate the concatenated layer
         concatenated = Dense(self.layers[0] * len(self.x_train),
                              activation=self.activation,
@@ -427,6 +452,8 @@ class MultimodalAutoencoder(AbstractAutoencoder):
             for i in range(len(self.x_train))]
         if self.activation is None:
             hidden = [self.af()(h) for h in hidden]
+        if self.dropout:
+            hidden = [Dropout(self.dropout)(h) for h in hidden]
         # Regenerate the m input modes
         self.decoded = [
             Dense(self.x_train[i].shape[1], activation='sigmoid',
