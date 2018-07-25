@@ -77,6 +77,8 @@ def main():
 
     stdout("Running for architecture", model_name)
 
+    best_model_filename = 'best_model.h5'
+
     autoencoder = MultimodalAutoencoder(
         x_train=networks,
         x_val=0.1,
@@ -87,7 +89,7 @@ def main():
         activation=activation,
         optimizer=optimizer,
         # early_stopping=(5, 0.),
-        save_best_model='best_model.h5',
+        save_best_model=best_model_filename,
         verbose=2)
 
     autoencoder.train()
@@ -106,6 +108,8 @@ def main():
         models_path, f'{model_name}_embeddings.mat')
 
     sio.savemat(embeddings_path, {'embeddings': embeddings})
+
+    os.remove(best_model_filename)
 
 
 ###################
