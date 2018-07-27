@@ -47,7 +47,7 @@ setup(
         'pytest-runner'],
     extras_require={
         "test": test_deps,
-        'gpu': ['tensorflow-gpu>=1.70'],
-        'cpu': ['tensorflow>=1.70']
+        'gpu': ['tensorflow-gpu>=1.7.0'],
+        'cpu': ['tensorflow>=1.7.0']
     },
 )
