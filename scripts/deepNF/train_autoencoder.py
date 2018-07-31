@@ -13,6 +13,7 @@ from agape.utils import stdout
 from agape.ml.autoencoder import MultimodalAutoencoder
 from scipy import io as sio
 from agape.plotting import plot_loss
+from keras.optimizers import SGD
 
 ##########################
 # Command line arguments #
@@ -85,7 +86,7 @@ def main():
         sparse=sparse,
         batch_size=batch_size,
         activation=activation,
-        optimizer=optimizer,
+        optimizer=SGD(lr=0.2, momentum=0.95),
         early_stopping=(5, 0.),
         verbose=2)
 
