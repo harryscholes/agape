@@ -114,9 +114,14 @@ def cross_validation(X, y, n_trials=10, n_jobs=1, n_threads=1,
         if clf_type == 'SVC':
             clf = SVClassifier(n_jobs=n_jobs, random_state=random_state)
             grid_search_params = {
-                'C': np.logspace(-1, 2, 4),
-                'gamma': np.logspace(-3, 0, 4),
+                'C': [1, 5, 10, 50, 100],
+                'gamma': [0.001, 0.005, 0.01, 0.05, 0.1],
                 'kernel': ['rbf']}
+        if clf_type == 'LinearSVC':
+            clf = SVClassifier(n_jobs=n_jobs, random_state=random_state)
+            grid_search_params = {
+                'C': np.logspace(-1, 2, 4),
+                'kernel': ['linear']}
         elif clf_type == 'LRC':
             clf = LRClassifier(n_jobs=n_jobs, random_state=random_state)
             grid_search_params = {'C': np.logspace(-2, 2, 5)}
