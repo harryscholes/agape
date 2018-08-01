@@ -25,6 +25,7 @@ parser.add_argument('-m', '--models-path', default="models", type=str)
 parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
 parser.add_argument('-l', '--layers', type=str)
 parser.add_argument('-s', '--sparse', default=None, type=float)
+parser.add_argument('-p', '--dropout', default=None, type=float)
 parser.add_argument('-a', '--activation', default="selu", type=str)
 parser.add_argument('-z', '--optimizer', default="AdaMax", type=str)
 parser.add_argument('-e', '--epochs', default=100, type=int)
@@ -40,6 +41,7 @@ models_path = os.path.expandvars(args.models_path)
 data_path = os.path.expandvars(args.data_path)
 layers = [int(i) for i in args.layers.split('-')]
 sparse = args.sparse
+dropout = args.dropout
 activation = args.activation
 optimizer = args.optimizer
 epochs = args.epochs
@@ -77,16 +79,20 @@ def main():
 
     stdout("Running for architecture", model_name)
 
+    best_model_filename = 'best_model.h5'
+
     autoencoder = MultimodalAutoencoder(
         x_train=networks,
         x_val=0.1,
         layers=layers,
         epochs=epochs,
         sparse=sparse,
+        dropout=dropout,
         batch_size=batch_size,
         activation=activation,
         optimizer=optimizer,
-        early_stopping=(5, 0.),
+        # early_stopping=(5, 0.),
+        save_best_model=best_model_filename,
         verbose=2)
 
     autoencoder.train()
@@ -105,6 +111,8 @@ def main():
         models_path, f'{model_name}_embeddings.mat')
 
     sio.savemat(embeddings_path, {'embeddings': embeddings})
+
+    os.remove(best_model_filename)
 
 
 ###################
