@@ -36,10 +36,10 @@ def MLP(x, y):
     model = Sequential([
         Dense(512, activation='relu', input_shape=(x.shape[1],)),
         # BatchNormalization(),
-        # Dropout(.5),
+        Dropout(.5),
         Dense(256, activation='relu'),
         # BatchNormalization(),
-        # Dropout(.5),
+        Dropout(.5),
         Dense(y.shape[1], activation='sigmoid')])
 
     return model
