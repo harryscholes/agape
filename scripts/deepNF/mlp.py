@@ -56,6 +56,7 @@ parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
 parser.add_argument('-n', '--n-trials', default=10, type=int)
 parser.add_argument('-c', '--clf-type', required=True, type=str)
 parser.add_argument('-s', '--random-state', default=-1, type=int)
+parser.add_argument('-b', '--batch-size', default=128, type=int)
 parser.add_argument('--tags', default="", type=str)
 args = parser.parse_args()
 
@@ -71,6 +72,7 @@ n_trials = args.n_trials
 random_state = args.random_state
 tags = args.tags
 clf_type = args.clf_type
+batch_size = args.batch_size
 
 # Set random_state seed for sklearn
 if random_state == -1:
@@ -159,7 +161,7 @@ def main():
         callbacks = [EarlyStopping(min_delta=0., patience=20),
                      ModelCheckpoint('best_model.h5', save_best_only=True)]
 
-        history = model.fit(x_train, y_train, batch_size=128, epochs=200,
+        history = model.fit(x_train, y_train, batch_size=batch_size, epochs=200,
                             validation_split=0.2, shuffle=True,
                             callbacks=callbacks, verbose=2)
 
