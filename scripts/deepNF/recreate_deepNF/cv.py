@@ -10,6 +10,7 @@ import json
 from pprint import pprint
 import scipy.io as sio
 # from agape.deepNF.validation import cross_validation
+from sklearn.preprocessing import minmax_scale
 from agape.deepNF.utils import load_embeddings, mkdir
 from agape.utils import stdout, directory_exists
 import sklearn
@@ -113,6 +114,7 @@ def main():
     print(model_name)
     stdout('Loading embeddings', embeddings_file)
     embeddings = load_embeddings(embeddings_file)
+    embeddings = minmax_scale(embeddings)
 
     #######################
     # Load GO annotations #
