@@ -86,7 +86,7 @@ def main():
         sparse=sparse,
         batch_size=batch_size,
         activation=activation,
-        optimizer=SGD(lr=0.2, momentum=0.95),
+        optimizer=SGD(lr=0.01, momentum=0.9),
         early_stopping=(5, 0.),
         verbose=2)
 
