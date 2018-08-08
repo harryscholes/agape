@@ -16,7 +16,7 @@ before_install:
   # Temporary fix while PyPI version of GOATOOLS GAF reader fails
   - pip install git+https://github.com/tanghaibao/goatools
 
-install: pip install -e ".[test]"
+install: pip install -e ".[cpu]" && pip install -e ".[test]"
 
 script: pytest
 
