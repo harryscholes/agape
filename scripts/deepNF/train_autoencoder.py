@@ -13,6 +13,7 @@ from agape.utils import stdout
 from agape.ml.autoencoder import MultimodalAutoencoder
 from scipy import io as sio
 from agape.plotting import plot_loss
+from keras.optimizers import SGD
 
 ##########################
 # Command line arguments #
