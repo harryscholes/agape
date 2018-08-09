@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.metrics import accuracy_score, f1_score, make_scorer
+from sklearn.metrics import (accuracy_score, f1_score, make_scorer,
+                             precision_score, recall_score)
 from sklearn.model_selection import ShuffleSplit
 from sklearn.dummy import DummyClassifier
 from scipy.stats import sem as std
@@ -65,6 +66,9 @@ class _Performance:
         self.accuracy = accuracy_score(y_true, y_pred)
         # Compute F1-score
         self.f1 = f1_score(y_true, y_pred, average='micro')
+        # Compute precision and recall
+        self.precision = precision_score(y_true, y_pred, average='micro')
+        self.recall = recall_score(y_true, y_pred, average='micro')
 
 
 def cross_validation(X, y, n_trials=10, n_jobs=1, n_threads=1,

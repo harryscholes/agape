@@ -1,7 +1,8 @@
 import numpy as np
 from sklearn import svm
 from sklearn.multiclass import OneVsRestClassifier
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import (accuracy_score, f1_score, precision_score,
+                             recall_score)
 from sklearn.model_selection import ShuffleSplit, KFold
 from sklearn.metrics.pairwise import rbf_kernel, linear_kernel
 from sklearn.utils import resample
@@ -83,6 +84,9 @@ def evaluate_performance(y_test, y_score, y_pred):
         y_new_pred[i, top_alpha] = np.array(alpha*[1])
     perf["F1"] = f1_score(y_test, y_new_pred, average='micro')
 
+    perf['precision'] = precision_score(y_test, y_pred, average='micro')
+    perf['recall'] = recall_score(y_test, y_pred, average='micro')
+
     return perf
 
 
@@ -114,6 +118,8 @@ def cross_validation(X, y, n_trials=5, ker='rbf'):
     pr_macro = []
     fmax = []
     acc = []
+    precision = []
+    recall = []
 
     # shuffle and split training and test sets
     trials = ShuffleSplit(n_splits=n_trials, test_size=0.2, random_state=None)
@@ -188,6 +194,8 @@ def cross_validation(X, y, n_trials=5, ker='rbf'):
         pr_macro.append(perf_trial['M-aupr'])
         fmax.append(perf_trial['F1'])
         acc.append(perf_trial['acc'])
+        precision.append(perf_trial['precision'])
+        recall.append(perf_trial['recall'])
         print("### Test dataset: AUPR['micro'] = %0.3f, AUPR['macro'] = %0.3f, F1 = %0.3f, Acc = %0.3f" % (perf_trial['m-aupr'], perf_trial['M-aupr'], perf_trial['F1'], perf_trial['acc']))
 
     perf = dict()
@@ -195,5 +203,7 @@ def cross_validation(X, y, n_trials=5, ker='rbf'):
     perf['pr_macro'] = pr_macro
     perf['fmax'] = fmax
     perf['acc'] = acc
+    perf['precision'] = precision
+    perf['recall'] = recall
 
     return perf

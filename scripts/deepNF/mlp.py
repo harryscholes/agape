@@ -142,7 +142,8 @@ def main():
     y = np.delete(y, del_rid, axis=0)
 
     # Set up CV
-    performance_metrics = ('accuracy', 'm_AUPR', 'M_AUPR', 'f1')
+    performance_metrics = (
+        "accuracy", "m_AUPR", "M_AUPR", "f1", "precision", "recall")
     performance = defaultdict(dict)
 
     trials = ShuffleSplit(n_splits=n_trials, test_size=0.2,
