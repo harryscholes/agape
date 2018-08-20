@@ -183,5 +183,5 @@ if __name__ == "__main__":
         sio.savemat(
             os.path.join(
                 output_path,
-                f'{output_basename}_net_{i}_K{args.K}_alpha{args.alpha}'),
+                f'{output_basename}_net_{i+1}_K{args.K}_alpha{args.alpha}'),
             {"Net": net})
