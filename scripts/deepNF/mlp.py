@@ -58,6 +58,7 @@ parser.add_argument('-c', '--clf-type', required=True, type=str)
 parser.add_argument('-s', '--random-state', default=-1, type=int)
 parser.add_argument('-b', '--batch-size', default=128, type=int)
 parser.add_argument('--tags', default="", type=str)
+parser.add_argument('--repeats', default=10, type=int)
 args = parser.parse_args()
 
 stdout("Command line arguments", args)
@@ -73,6 +74,7 @@ random_state = args.random_state
 tags = args.tags
 clf_type = args.clf_type
 batch_size = args.batch_size
+repeats = args.repeats
 
 # Set random_state seed for sklearn
 if random_state == -1:
@@ -143,63 +145,68 @@ def main():
 
     # Set up CV
     performance_metrics = ('accuracy', 'm_AUPR', 'M_AUPR', 'f1')
-    performance = defaultdict(dict)
+    performance_repeats = defaultdict(dict)
 
-    trials = ShuffleSplit(n_splits=n_trials, test_size=0.2,
-                          random_state=random_state)
-    iteration = 0
+    for repeat in range(1, repeats + 1):
 
-    # CV-folds
-    for train_idx, test_idx in trials.split(x):
-        iteration += 1
+        performance_repeats[f'repeat_{repeat}'] = defaultdict(dict)
+        performance = performance_repeats[f'repeat_{repeat}']
 
-        x_train = x[train_idx]
-        x_test = x[test_idx]
-        y_train = y[train_idx]
-        y_test = y[test_idx]
+        trials = ShuffleSplit(n_splits=n_trials, test_size=0.2,
+                              random_state=random_state)
+        iteration = 0
 
-        # Define the MLP architecture
-        model = MLP(x_train, y_train)
-        model.compile('adam', 'binary_crossentropy', ['acc'])
+        # CV-folds
+        for train_idx, test_idx in trials.split(x):
+            iteration += 1
 
-        # Train the model
-        callbacks = [EarlyStopping(min_delta=0., patience=20),
-                     ModelCheckpoint('best_model.h5', save_best_only=True)]
+            x_train = x[train_idx]
+            x_test = x[test_idx]
+            y_train = y[train_idx]
+            y_test = y[test_idx]
 
-        history = model.fit(x_train, y_train, batch_size=batch_size, epochs=200,
-                            validation_split=0.2, shuffle=True,
-                            callbacks=callbacks, verbose=2)
+            # Define the MLP architecture
+            model = MLP(x_train, y_train)
+            model.compile('adam', 'binary_crossentropy', ['acc'])
 
-        performance['history'][iteration] = {}
-        for tm in history.history:
-            performance['history'][iteration][tm] = history.history[tm]
+            # Train the model
+            callbacks = [EarlyStopping(min_delta=0., patience=20),
+                         ModelCheckpoint('best_model.h5', save_best_only=True)]
 
-        # Read the best model from file (defined as the model which minimizes
-        # the validation loss.
-        model = load_model('best_model.h5')
+            history = model.fit(x_train, y_train, batch_size=batch_size, epochs=200,
+                                validation_split=0.2, shuffle=True,
+                                callbacks=callbacks, verbose=2)
 
-        # Predict annotations
-        y_score = model.predict(x_test)
-        y_pred = y_score.copy()
-        positive_threshold = .5
-        y_pred[y_pred < positive_threshold] = 0
-        y_pred[y_pred > 0] = 1
-        performance_trial = _Performance(y_test, y_score, y_pred)
+            performance['history'][iteration] = {}
+            for tm in history.history:
+                performance['history'][iteration][tm] = history.history[tm]
 
-        for pm in performance_metrics:
-            performance[pm][iteration] = getattr(performance_trial, pm)
-            calculate_mean_std(performance, pm)
+            # Read the best model from file (defined as the model which minimizes
+            # the validation loss.
+            model = load_model('best_model.h5')
 
-        dummy = DummyClassifier().fit(x_train, y_train).score(x_test, y_test)
-        performance['dummy'][iteration] = dummy
+            # Predict annotations
+            y_score = model.predict(x_test)
+            y_pred = y_score.copy()
+            positive_threshold = .5
+            y_pred[y_pred < positive_threshold] = 0
+            y_pred[y_pred > 0] = 1
+            performance_trial = _Performance(y_test, y_score, y_pred)
 
-    performance['level'] = level
-    pprint(performance)
+            for pm in performance_metrics:
+                performance[pm][iteration] = getattr(performance_trial, pm)
+                calculate_mean_std(performance, pm)
+
+            dummy = DummyClassifier().fit(x_train, y_train).score(x_test, y_test)
+            performance['dummy'][iteration] = dummy
+
+        performance['level'] = level
+        pprint(performance)
 
     # Save results and training history
     fout = f'{model_name}_{level}_{clf_type}'
     with open(os.path.join(results_path, f'{fout}.json'), 'w') as f:
-        json.dump(performance, f)
+        json.dump(performance_repeats, f)
 
     # Delete the best model file
     os.remove('best_model.h5')
