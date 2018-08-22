@@ -130,7 +130,7 @@ def main():
     '''Run for each ontology and for three levels of term counts.
     '''
     # Load GO DAG
-    go = GO("experimental", "computational", "curated")
+    go = GO("experimental", "curated")
     go.load_go_dag()
     go_dag = go.go_dag
 
