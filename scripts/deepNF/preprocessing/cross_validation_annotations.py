@@ -135,7 +135,7 @@ def main():
     go_dag = go.go_dag
 
     # Set `vmin` and `vmax` for each level of term counts
-    ontology_sizes = [(11, 30), (31, 100), (101, 300)]
+    ontology_sizes = [(101, 300), (31, 100), (11, 30)]
 
     # Names of the three ontologies
     ontologies = ['P', 'F', 'C']
