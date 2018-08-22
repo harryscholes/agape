@@ -53,7 +53,7 @@ parser.add_argument('-v', '--validation', default='cv', type=str)
 parser.add_argument('-m', '--models-path', default="models", type=str)
 parser.add_argument('-r', '--results-path', default="results", type=str)
 parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF", type=str)
-parser.add_argument('-n', '--n-trials', default=10, type=int)
+parser.add_argument('-n', '--n-trials', default=5, type=int)
 parser.add_argument('-c', '--clf-type', required=True, type=str)
 parser.add_argument('-s', '--random-state', default=-1, type=int)
 parser.add_argument('-b', '--batch-size', default=128, type=int)
@@ -86,7 +86,8 @@ else:
 
 # Validation type
 validation_types = {
-    'cv': ('P_1', 'P_2', 'P_3', 'F_1', 'F_2', 'F_3', 'C_1', 'C_2', 'C_3'),
+    'cv': ('P_1', 'P_2', 'P_3', 'F_1', 'F_2', 'F_3', 'C_1', 'C_2', 'C_3',
+           'P', 'C', 'F'),
     'cerevisiae': ('level1', 'level2', 'level3', 'all')}
 
 try:
@@ -124,12 +125,21 @@ def main():
     # Train classifier
     stdout('Running cross-validation for', level)
 
-    if level == 'all':
-        annotations = np.hstack((annotation_file['level1'],
-                                 annotation_file['level2'],
-                                 annotation_file['level3'])).astype('int32')
-    else:
-        annotations = annotation_file[level].astype('int32')
+    if validation == 'cv':
+        if level in ('P', 'F', 'C'):
+            annotations = np.hstack(
+                [annotation_file[f'{level}_{i}'] for i in range(1, 4)])
+        else:
+            annotations = annotation_file[level]
+
+    elif validation == 'cerevisiae':
+        if level == 'all':
+            annotations = np.hstack(
+                [annotation_file[f'level{i}'] for i in range(1, 4)])
+        else:
+            annotations = annotation_file[level]
+
+    annotations = annotations.astype('int32')
 
     # Silence certain warning messages during cross-validation
     for w in (sklearn.exceptions.UndefinedMetricWarning, UserWarning,
