@@ -45,5 +45,5 @@ df = df.sort_values(by=['source', 'target'])
 df['weight'] = 1.
 
 df.to_csv(os.path.join(output_path,
-                       f"yeast_biogrid_genetic_adjacency.txt"),
+                       f"yeast_z_biogrid_genetic_adjacency.txt"),
           sep="\t", index=False, header=False)
