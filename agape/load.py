@@ -14,7 +14,7 @@ class Genes(Base):
     """
     def __init__(self):
         super().__init__()
-        
+
         df = pd.read_csv(os.path.join(data,
                                       "schizosaccharomyces_pombe.genome.gff3"),
                          skiprows=6,
@@ -57,7 +57,7 @@ class Biogrid(Base):
     def __init__(self):
         super().__init__()
 
-        f = "BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.158.tab2.txt"
+        f = "BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.164.tab2.txt"
         df = pd.read_csv(os.path.join(data, f), sep="\t")
         df = df[(df["Organism Interactor A"] == 284812) &
                 (df["Organism Interactor B"] == 284812)]

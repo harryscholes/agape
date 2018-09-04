@@ -29,11 +29,11 @@ if [ ! -f FYPOviability.tsv ]; then
 fi
 
 # BioGRID
-if [ ! -f BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.158.tab2.txt ]; then
-    curl -O https://downloads.thebiogrid.org/Download/BioGRID/Release-Archive/BIOGRID-3.4.158/BIOGRID-ORGANISM-3.4.158.tab2.zip \
-    && unzip BIOGRID-ORGANISM-3.4.158.tab2.zip -d Biogrid/ \
-    && mv Biogrid/BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.158.tab2.txt . \
-    && rm -r Biogrid/
+if [ ! -f BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.164.tab2.txt ]; then
+    curl -O https://downloads.thebiogrid.org/Download/BioGRID/Release-Archive/BIOGRID-3.4.164/BIOGRID-ORGANISM-3.4.164.tab2.zip \
+    && unzip BIOGRID-ORGANISM-3.4.164.tab2.zip -d Biogrid/ \
+    && mv Biogrid/BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.164.tab2.txt . \
+    && rm -r Biogrid/ BIOGRID-ORGANISM-3.4.164.tab2.zip
 fi
 
 # STRING
