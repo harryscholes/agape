@@ -47,3 +47,9 @@ if [ ! -f pombeallpairs..genexp.txt ]; then
     curl -O http://bahlerweb.cs.ucl.ac.uk/meta-analysis/pombeallpairs..genexp.txt.gz \
     && gunzip pombeallpairs..genexp.txt.gz
 fi
+
+# FYPO annotations
+if [ ! -f phenotype_annotations.pombase.phaf ]; then
+    curl -O ftp://ftp.pombase.org/pombe/annotations/Phenotype_annotations/phenotype_annotations.pombase.phaf.gz \
+    && gunzip phenotype_annotations.pombase.phaf.gz
+fi
