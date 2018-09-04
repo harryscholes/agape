@@ -49,25 +49,29 @@ output_path = directory_exists(args.output_path)
 
 def _load_network(filename, mtrx='adj'):
     print(f"Loading {filename}")
-    if mtrx == 'adj':
-        i, j, val = np.loadtxt(filename).T
+    i, j, val = np.loadtxt(filename).T
+
+    if 'fypo' in filename:
+        A = coo_matrix((val, (i, j)), shape=(args.genes, max(j)+1))
+    else:
         A = coo_matrix((val, (i, j)), shape=(args.genes, args.genes))
-        A = A.todense()
-        A = np.squeeze(np.asarray(A))
-        if A.min() < 0:
-            print("### Negative entries in the matrix are not allowed!")
-            A[A < 0] = 0
-            print("### Matrix converted to nonnegative matrix.")
-        if (A.T == A).all():
-            pass
-        else:
+
+    A = A.toarray().squeeze()
+
+    if A.min() < 0:
+        print("### Negative entries in the matrix are not allowed!")
+        A[A < 0] = 0
+        print("### Matrix converted to nonnegative matrix.")
+
+    # Symmetric matrices like adjacency matrices
+    if A.shape[0] == A.shape[1]:
+        if not np.array_equal(A, A.T):
             print("### Matrix not symmetric!")
             A = A + A.T
             print("### Matrix converted to symmetric.")
-    else:
-        print("### Wrong mtrx type. Possible: {'adj', 'inc'}")
-    A = A - np.diag(np.diag(A))
-    A = A + np.diag(A.sum(axis=1) == 0)
+
+        A = A - np.diag(np.diag(A))
+        A = A + np.diag(A.sum(axis=1) == 0)
     return A
 
 
@@ -176,8 +180,9 @@ if __name__ == "__main__":
     for i, f in zip(range(len(Nets)), filenames):
         print(f"Computing PPMI for network {f}")
         net = Nets[i]
-        net = RWR(net)
-        net = PPMI_matrix(net)
+        if net.shape[0] == net.shape[1]:
+            net = RWR(net)
+            net = PPMI_matrix(net)
         net = csc_matrix(net)
         print("### Writing output to file...")
         sio.savemat(
