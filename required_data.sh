@@ -41,3 +41,9 @@ if [ ! -f 4896.protein.links.detailed.v10.5.txt ]; then
     curl -O https://stringdb-static.org/download/protein.links.detailed.v10.5/4896.protein.links.detailed.v10.5.txt.gz \
     && gunzip 4896.protein.links.detailed.v10.5.txt.gz
 fi
+
+# Gene expression meta-analysis
+if [ ! -f pombeallpairs..genexp.txt ]; then
+    curl -O http://bahlerweb.cs.ucl.ac.uk/meta-analysis/pombeallpairs..genexp.txt.gz \
+    && gunzip pombeallpairs..genexp.txt.gz
+fi
