@@ -51,6 +51,6 @@ def sparse_colvector(filename):
 
 FYPO_IDs = ['FYPO_0001309.tsv', 'FYPO_0004344.tsv']
 
-d = {k[:-4]: sparse_colvector(k) for k in FYPO_IDs}
+d = {k[:-4]: sparse_colvector(k).toarray() for k in FYPO_IDs}
 
 sio.savemat(os.path.join(output_path, "ageing_genes.mat"), d)
