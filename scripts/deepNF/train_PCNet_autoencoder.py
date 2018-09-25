@@ -73,7 +73,7 @@ def main():
     # Train the autoencoder #
     #########################
 
-    model_name = [f'{org}', model_type, f'arch_{args.layers}']
+    model_name = [f'{org}', f'{model_type}-{args.layers}']
 
     if ofile_tags != '':
         model_name.append(ofile_tags)
