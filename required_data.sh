@@ -29,15 +29,27 @@ if [ ! -f FYPOviability.tsv ]; then
 fi
 
 # BioGRID
-if [ ! -f BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.158.tab2.txt ]; then
-    curl -O https://downloads.thebiogrid.org/Download/BioGRID/Release-Archive/BIOGRID-3.4.158/BIOGRID-ORGANISM-3.4.158.tab2.zip \
-    && unzip BIOGRID-ORGANISM-3.4.158.tab2.zip -d Biogrid/ \
-    && mv Biogrid/BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.158.tab2.txt . \
-    && rm -r Biogrid/
+if [ ! -f BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.164.tab2.txt ]; then
+    curl -O https://downloads.thebiogrid.org/Download/BioGRID/Release-Archive/BIOGRID-3.4.164/BIOGRID-ORGANISM-3.4.164.tab2.zip \
+    && unzip BIOGRID-ORGANISM-3.4.164.tab2.zip -d Biogrid/ \
+    && mv Biogrid/BIOGRID-ORGANISM-Schizosaccharomyces_pombe_972h-3.4.164.tab2.txt . \
+    && rm -r Biogrid/ BIOGRID-ORGANISM-3.4.164.tab2.zip
 fi
 
 # STRING
 if [ ! -f 4896.protein.links.detailed.v10.5.txt ]; then
     curl -O https://stringdb-static.org/download/protein.links.detailed.v10.5/4896.protein.links.detailed.v10.5.txt.gz \
     && gunzip 4896.protein.links.detailed.v10.5.txt.gz
+fi
+
+# Gene expression meta-analysis
+if [ ! -f pombeallpairs..genexp.txt ]; then
+    curl -O http://bahlerweb.cs.ucl.ac.uk/meta-analysis/pombeallpairs..genexp.txt.gz \
+    && gunzip pombeallpairs..genexp.txt.gz
+fi
+
+# FYPO annotations
+if [ ! -f phenotype_annotations.pombase.phaf ]; then
+    curl -O ftp://ftp.pombase.org/pombe/annotations/Phenotype_annotations/phenotype_annotations.pombase.phaf.gz \
+    && gunzip phenotype_annotations.pombase.phaf.gz
 fi

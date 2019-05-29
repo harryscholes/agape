@@ -1,5 +1,5 @@
 '''
-Train a multimodal deep autoencoder on multiple networks.
+Train a deep autoencoder on a network adjacency matrix.
 
 Usage:
     python train_autoencoder.py
@@ -10,10 +10,10 @@ import pickle
 import argparse
 from agape.deepNF.utils import mkdir, load_ppmi_matrices
 from agape.utils import stdout
-from agape.ml.autoencoder import MultimodalAutoencoder
+from agape.ml.autoencoder import DeepAutoencoder
 from scipy import io as sio
 from agape.plotting import plot_loss
-from keras.optimizers import SGD
+from sklearn.preprocessing import minmax_scale
 
 ##########################
 # Command line arguments #
@@ -21,9 +21,9 @@ from keras.optimizers import SGD
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-o', '--organism', default='yeast', type=str)
-parser.add_argument('-t', '--model-type', default='mda', type=str)
+parser.add_argument('-t', '--model-type', default='PCNet-DA', type=str)
 parser.add_argument('-m', '--models-path', default="models", type=str)
-parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF/networks",
+parser.add_argument('-d', '--data-path', default="$AGAPEDATA/deepNF/networks/PCNet",
                     type=str)
 parser.add_argument('-l', '--layers', type=str)
 parser.add_argument('-s', '--sparse', default=None, type=float)
@@ -67,15 +67,16 @@ def main():
     #################
 
     networks, dims = load_ppmi_matrices(data_path)
+    A = minmax_scale(networks[0])
 
     #########################
     # Train the autoencoder #
     #########################
 
-    model_name = [f'{org}', f'{model_type.upper()}', f'arch_{args.layers}']
+    model_name = [f'{org}', f'{model_type}-{args.layers}']
 
     if ofile_tags != '':
-        model_name.append(f'{f"{ofile_tags}" if ofile_tags != "" else ""}')
+        model_name.append(ofile_tags)
 
     model_name = '_'.join(model_name)
 
@@ -83,8 +84,8 @@ def main():
 
     best_model_filename = 'best_model.h5'
 
-    autoencoder = MultimodalAutoencoder(
-        x_train=networks,
+    autoencoder = DeepAutoencoder(
+        x_train=A,
         x_val=0.1,
         layers=layers,
         epochs=epochs,
@@ -107,7 +108,7 @@ def main():
 
     plot_loss({model_name: history}, f'{models_path}/{model_name}')
 
-    embeddings = autoencoder.encode(networks)
+    embeddings = autoencoder.encode(A)
 
     embeddings_path = os.path.join(
         models_path, f'{model_name}_embeddings.mat')

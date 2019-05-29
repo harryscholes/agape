@@ -130,12 +130,12 @@ def main():
     '''Run for each ontology and for three levels of term counts.
     '''
     # Load GO DAG
-    go = GO("experimental", "computational", "curated")
+    go = GO("experimental", "curated")
     go.load_go_dag()
     go_dag = go.go_dag
 
     # Set `vmin` and `vmax` for each level of term counts
-    ontology_sizes = [(11, 30), (31, 100), (101, 300)]
+    ontology_sizes = [(101, 300), (31, 100), (11, 30)]
 
     # Names of the three ontologies
     ontologies = ['P', 'F', 'C']
