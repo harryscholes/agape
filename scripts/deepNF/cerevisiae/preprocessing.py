@@ -121,7 +121,6 @@ def _scaleSimMat(A):
     A = A.astype(np.float)/col[:, None]
     return A
 
-
 def RWR(A, K=args.K, alpha=args.alpha):
     """Random Walk on graph.
     """
